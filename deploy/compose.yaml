@@ -1,0 +1,18 @@
+services:
+  chrono:
+    image: mcp-chrono:probe-20260827
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3025:3025"
+    volumes:
+      - chrono-data:/data
+    restart: unless-stopped
+    privileged: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  chrono-data:

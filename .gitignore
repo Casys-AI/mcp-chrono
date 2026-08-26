@@ -1,0 +1,17 @@
+data/
+coverage/
+.env
+.env.*
+*.env
+*.env.*
+**/.env
+**/.env.*
+**/*.env
+**/*.env.*
+!.env.example
+!**/.env.example
+*.tmp
+__pycache__/
+*.py[cod]
+._*
+.DS_Store
