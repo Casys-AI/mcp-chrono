@@ -1,416 +1,68 @@
-# Explicit Linux/amd64 Conda transaction for Project Chrono 10.0.0.
+# Explicit Linux/amd64 Conda transaction for Project Chrono / PyChrono 10.0.0.
 # Resolved on 2026-08-27 with mambaorg/micromamba@sha256:2681c45bf145f9b292fc26120646125586a2be4289eda48ce8a94ae2b22eda67.
-# Every URL uses the resolver-supplied SHA-256 fragment accepted by Conda explicit specs.
+# Solver command: micromamba create --dry-run --json --strict-channel-priority --name chrono-cpu --channel conda-forge python=3.12 pychrono=10.0.0
+# Resolver result: 31 archives, 610907928 compressed bytes. Every URL uses the
+# resolver-supplied SHA-256 fragment accepted by Conda explicit specs.
 @EXPLICIT
-# sha256=6f93ceb66267e69728d83cf98673221f6b1f95a3514b3a97777cfd0ef8e24f3f package=cuda-version-12.8-h5d125a7_3
-https://conda.anaconda.org/conda-forge/noarch/cuda-version-12.8-h5d125a7_3.conda#6f93ceb66267e69728d83cf98673221f6b1f95a3514b3a97777cfd0ef8e24f3f
-# sha256=80677180dd3c22deb7426ca89d6203f1c7f1f256f2d5a94dc210f6e758229809 package=python_abi-3.12-8_cp312
-https://conda.anaconda.org/conda-forge/noarch/python_abi-3.12-8_cp312.conda#80677180dd3c22deb7426ca89d6203f1c7f1f256f2d5a94dc210f6e758229809
-# sha256=b928c30ddcb0e3f544c6eade8352737e6e610e263276b90232db6a578ef899d8 package=tzdata-2026c-h151e31d_0
-https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda#b928c30ddcb0e3f544c6eade8352737e6e610e263276b90232db6a578ef899d8
-# sha256=0a0544cf95f64394fe4959286f5c71f5444ad58feb0602e53becb27448d24da6 package=ca-certificates-2026.7.22-hbd8a1cb_0
-https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.7.22-hbd8a1cb_0.conda#0a0544cf95f64394fe4959286f5c71f5444ad58feb0602e53becb27448d24da6
-# sha256=e1698675ec83a2139c0b02165f47eaf0701bcab043443d9008fc0f8867b07798 package=mpi-1.0.1-openmpi
-https://conda.anaconda.org/conda-forge/noarch/mpi-1.0.1-openmpi.conda#e1698675ec83a2139c0b02165f47eaf0701bcab043443d9008fc0f8867b07798
-# sha256=58d7f40d2940dd0a8aa28651239adbf5613254df0f75789919c4e6762054403b package=font-ttf-dejavu-sans-mono-2.37-hab24e00_0
-https://conda.anaconda.org/conda-forge/noarch/font-ttf-dejavu-sans-mono-2.37-hab24e00_0.tar.bz2#58d7f40d2940dd0a8aa28651239adbf5613254df0f75789919c4e6762054403b
-# sha256=2821ec1dc454bd8b9a31d0ed22a7ce22422c0aef163c59f49dfdf915d0f0ca14 package=font-ttf-ubuntu-0.83-h77eed37_3
-https://conda.anaconda.org/conda-forge/noarch/font-ttf-ubuntu-0.83-h77eed37_3.conda#2821ec1dc454bd8b9a31d0ed22a7ce22422c0aef163c59f49dfdf915d0f0ca14
-# sha256=c52a29fdac682c20d252facc50f01e7c2e7ceac52aa9817aaf0bb83f7559ec5c package=font-ttf-inconsolata-3.000-h77eed37_0
-https://conda.anaconda.org/conda-forge/noarch/font-ttf-inconsolata-3.000-h77eed37_0.tar.bz2#c52a29fdac682c20d252facc50f01e7c2e7ceac52aa9817aaf0bb83f7559ec5c
-# sha256=00925c8c055a2275614b4d983e1df637245e19058d79fc7dd1a93b8d9fb4b139 package=font-ttf-source-code-pro-2.038-h77eed37_0
-https://conda.anaconda.org/conda-forge/noarch/font-ttf-source-code-pro-2.038-h77eed37_0.tar.bz2#00925c8c055a2275614b4d983e1df637245e19058d79fc7dd1a93b8d9fb4b139
-# sha256=b8b307d03eb16aa111d244004ac48d1e0d0592ade846566bb392f75c54b6828f package=cuda-cudart_linux-64-12.8.90-h3f2d84a_1
-https://conda.anaconda.org/conda-forge/noarch/cuda-cudart_linux-64-12.8.90-h3f2d84a_1.conda#b8b307d03eb16aa111d244004ac48d1e0d0592ade846566bb392f75c54b6828f
-# sha256=54eea8469786bc2291cc40bca5f46438d3e062a399e8f53f013b6a9f50e98333 package=fonts-conda-forge-1-hc364b38_1
-https://conda.anaconda.org/conda-forge/noarch/fonts-conda-forge-1-hc364b38_1.conda#54eea8469786bc2291cc40bca5f46438d3e062a399e8f53f013b6a9f50e98333
-# sha256=a997f2f1921bb9c9d76e6fa2f6b408b7fa549edd349a77639c9fe7a23ea93e61 package=fonts-conda-ecosystem-1-0
-https://conda.anaconda.org/conda-forge/noarch/fonts-conda-ecosystem-1-0.tar.bz2#a997f2f1921bb9c9d76e6fa2f6b408b7fa549edd349a77639c9fe7a23ea93e61
-# sha256=6eb77601a44b78c4631d886d54ef54f321c2bdc69fdefc4065a1e0491f030c76 package=libglvnd-1.7.0-ha4b6fd6_5
-https://conda.anaconda.org/conda-forge/linux-64/libglvnd-1.7.0-ha4b6fd6_5.conda#6eb77601a44b78c4631d886d54ef54f321c2bdc69fdefc4065a1e0491f030c76
-# sha256=b6fa85a30cceca3ad7a811ab34f842b9c2ae9d9d4c520e084b62b2abe50e9a70 package=llvm-openmp-23.1.0-h7148c6a_0
-https://conda.anaconda.org/conda-forge/linux-64/llvm-openmp-23.1.0-h7148c6a_0.conda#b6fa85a30cceca3ad7a811ab34f842b9c2ae9d9d4c520e084b62b2abe50e9a70
-# sha256=eb8a0db0aa570124f7d2a93d7c7f596e3390df5e047818d873baad32985fc736 package=libzlib-1.3.2-h25fd6f3_3
+# sha256=eb8a0db0aa570124f7d2a93d7c7f596e3390df5e047818d873baad32985fc736 package=libzlib-1.3.2-h25fd6f3_3.conda
 https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.2-h25fd6f3_3.conda#eb8a0db0aa570124f7d2a93d7c7f596e3390df5e047818d873baad32985fc736
-# sha256=13d3fde9c1dcf254968cc70652222a43f25d04e69555ccf855553110e753288e package=libegl-1.7.0-ha4b6fd6_5
-https://conda.anaconda.org/conda-forge/linux-64/libegl-1.7.0-ha4b6fd6_5.conda#13d3fde9c1dcf254968cc70652222a43f25d04e69555ccf855553110e753288e
-# sha256=7bdca717c840e17d7dd050f925dd964da61086c2612b8579a4ff4147105f291f package=libopengl-1.7.0-ha4b6fd6_5
-https://conda.anaconda.org/conda-forge/linux-64/libopengl-1.7.0-ha4b6fd6_5.conda#7bdca717c840e17d7dd050f925dd964da61086c2612b8579a4ff4147105f291f
-# sha256=c0cddb66070dd6355311f7667ce2acccf70d1013edaa6e97f22859502fefdb22 package=_openmp_mutex-4.5-7_kmp_llvm
-https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda#c0cddb66070dd6355311f7667ce2acccf70d1013edaa6e97f22859502fefdb22
-# sha256=47d682b9f6d6ec9eb1a6e6c3e75ea6273e899e78fb7fc59f81d39745009fbc60 package=zstd-1.5.7-hb78ec9c_7
+# sha256=0fe5cb8e0752241ab55e11656ed1b9726248b522d23b929fe7c95b83eb55b9bb package=libgomp-16.2.0-he0feb66_4.conda
+https://conda.anaconda.org/conda-forge/linux-64/libgomp-16.2.0-he0feb66_4.conda#0fe5cb8e0752241ab55e11656ed1b9726248b522d23b929fe7c95b83eb55b9bb
+# sha256=f122c5bb618532eb40124f34dc3d467b9142c4a573c206e3e6a51df671345d6a package=eigen-5.0.1-hc65338a_0.conda
+https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-hc65338a_0.conda#f122c5bb618532eb40124f34dc3d467b9142c4a573c206e3e6a51df671345d6a
+# sha256=47d682b9f6d6ec9eb1a6e6c3e75ea6273e899e78fb7fc59f81d39745009fbc60 package=zstd-1.5.7-hb78ec9c_7.conda
 https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda#47d682b9f6d6ec9eb1a6e6c3e75ea6273e899e78fb7fc59f81d39745009fbc60
-# sha256=16080a1c7724f7d25727cdc23c7658e0cec2db52448c1dc0c33467ee2c6e1c62 package=zlib-1.3.2-h25fd6f3_3
-https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.2-h25fd6f3_3.conda#16080a1c7724f7d25727cdc23c7658e0cec2db52448c1dc0c33467ee2c6e1c62
-# sha256=24090e675d34403b4ee1cd4372d8f6c0937da7ecfd66a19a57cac2ed0f4ea793 package=libgcc-16.2.0-ha9f2e26_4
-https://conda.anaconda.org/conda-forge/linux-64/libgcc-16.2.0-ha9f2e26_4.conda#24090e675d34403b4ee1cd4372d8f6c0937da7ecfd66a19a57cac2ed0f4ea793
-# sha256=27d83f1188cd19bcb7754a078b3fa7f4cfb8527f8eb2fde54dd01fc529d1adec package=ld_impl_linux-64-2.46.1-default_hbd61a6d_102
+# sha256=1dd3fffd892081df9726d7eb7e0dea6198962ba775bd88842135a4ddb4deb3c9 package=_openmp_mutex-4.5-20_gnu.conda
+https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda#1dd3fffd892081df9726d7eb7e0dea6198962ba775bd88842135a4ddb4deb3c9
+# sha256=27d83f1188cd19bcb7754a078b3fa7f4cfb8527f8eb2fde54dd01fc529d1adec package=ld_impl_linux-64-2.46.1-default_hbd61a6d_102.conda
 https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.46.1-default_hbd61a6d_102.conda#27d83f1188cd19bcb7754a078b3fa7f4cfb8527f8eb2fde54dd01fc529d1adec
-# sha256=d3189527c5b8e1fea2a2e391012d3e8f794e03bdabe9f4457a0ac4cb8fc7214c package=xorg-xf86vidmodeproto-2.3.1-hb9d3cd8_1005
-https://conda.anaconda.org/conda-forge/linux-64/xorg-xf86vidmodeproto-2.3.1-hb9d3cd8_1005.conda#d3189527c5b8e1fea2a2e391012d3e8f794e03bdabe9f4457a0ac4cb8fc7214c
-# sha256=49b532d1df875c6749d9078b56a76f3f5db49a5abe0ca620b593ed474ef0ebf1 package=xorg-libice-1.1.2-h280c20c_0
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libice-1.1.2-h280c20c_0.conda#49b532d1df875c6749d9078b56a76f3f5db49a5abe0ca620b593ed474ef0ebf1
-# sha256=d164dfa75ecd538f6fd68765defcc06aa875bc697b9b215362d79a2a73125dd0 package=yaml-0.2.5-hebe6cf0_3
-https://conda.anaconda.org/conda-forge/linux-64/yaml-0.2.5-hebe6cf0_3.conda#d164dfa75ecd538f6fd68765defcc06aa875bc697b9b215362d79a2a73125dd0
-# sha256=addc80c69d362a9e6c40305c493139a8e9ee504b2f45a6687dbdaa9da3c6183c package=libpciaccess-0.19-hb03c661_1
-https://conda.anaconda.org/conda-forge/linux-64/libpciaccess-0.19-hb03c661_1.conda#addc80c69d362a9e6c40305c493139a8e9ee504b2f45a6687dbdaa9da3c6183c
-# sha256=82873b6c8478e19ab7aef0828ad3619b6633ad185a90a52f39dcb2c30c0c075e package=libopus-1.6.1-hebe6cf0_1
-https://conda.anaconda.org/conda-forge/linux-64/libopus-1.6.1-hebe6cf0_1.conda#82873b6c8478e19ab7aef0828ad3619b6633ad185a90a52f39dcb2c30c0c075e
-# sha256=ffb066ddf2e76953f92e06677021c73c85536098f1c21fcd15360dbc859e22e4 package=libogg-1.3.5-hd0c01bc_1
-https://conda.anaconda.org/conda-forge/linux-64/libogg-1.3.5-hd0c01bc_1.conda#ffb066ddf2e76953f92e06677021c73c85536098f1c21fcd15360dbc859e22e4
-# sha256=e5864f257f839ffc27d681659bac95901f524f602b9121e5dcc5e2df18437f2d package=libbrotlicommon-1.2.0-h39a168f_3
-https://conda.anaconda.org/conda-forge/linux-64/libbrotlicommon-1.2.0-h39a168f_3.conda#e5864f257f839ffc27d681659bac95901f524f602b9121e5dcc5e2df18437f2d
-# sha256=e4418f68d01a6307c4431b585c71b584f40189877364e542ee87deb777f5e85b package=libev-4.33-h280c20c_3
-https://conda.anaconda.org/conda-forge/linux-64/libev-4.33-h280c20c_3.conda#e4418f68d01a6307c4431b585c71b584f40189877364e542ee87deb777f5e85b
-# sha256=9c37cc233238adf366ea75b0e845662a5be07ceadf62e458183516369340274b package=c-ares-1.34.8-hebe6cf0_2
-https://conda.anaconda.org/conda-forge/linux-64/c-ares-1.34.8-hebe6cf0_2.conda#9c37cc233238adf366ea75b0e845662a5be07ceadf62e458183516369340274b
-# sha256=dd053c96dcb0dcfd59422aefea9d2fe937a190167f34fba7893ec1e10a7e8963 package=keyutils-1.6.3-h7cc23a3_1
-https://conda.anaconda.org/conda-forge/linux-64/keyutils-1.6.3-h7cc23a3_1.conda#dd053c96dcb0dcfd59422aefea9d2fe937a190167f34fba7893ec1e10a7e8963
-# sha256=a0a1400198e5302d8367f2ed53437ee3cc41dbc463cb481921ce765578780b7a package=lzo-2.10-hebe6cf0_1003
-https://conda.anaconda.org/conda-forge/linux-64/lzo-2.10-hebe6cf0_1003.conda#a0a1400198e5302d8367f2ed53437ee3cc41dbc463cb481921ce765578780b7a
-# sha256=f943117edb9cd4d9c61cc972eee5a34291dc55ea7a6e9e38da104995841cbcb6 package=libiconv-1.18-h0cb94f2_3
-https://conda.anaconda.org/conda-forge/linux-64/libiconv-1.18-h0cb94f2_3.conda#f943117edb9cd4d9c61cc972eee5a34291dc55ea7a6e9e38da104995841cbcb6
-# sha256=3611c5d605cd56017704e6c01c7bd849e74a656a546d4c49d655fde49ddfeecc package=giflib-5.2.2-ha257d8a_1
-https://conda.anaconda.org/conda-forge/linux-64/giflib-5.2.2-ha257d8a_1.conda#3611c5d605cd56017704e6c01c7bd849e74a656a546d4c49d655fde49ddfeecc
-# sha256=8415001414f488c85b72b9d8cc2071dfb3981a47bc3c8eb56ef91a57d12eae7f package=libwebp-base-1.6.0-hd42ef1d_1
-https://conda.anaconda.org/conda-forge/linux-64/libwebp-base-1.6.0-hd42ef1d_1.conda#8415001414f488c85b72b9d8cc2071dfb3981a47bc3c8eb56ef91a57d12eae7f
-# sha256=8cb25174d6b6fac95d31e86cfe41faffc8ee9dacbf2bfd22e6c23377e8f338c1 package=libcap-2.78-h084b8d7_1
-https://conda.anaconda.org/conda-forge/linux-64/libcap-2.78-h084b8d7_1.conda#8cb25174d6b6fac95d31e86cfe41faffc8ee9dacbf2bfd22e6c23377e8f338c1
-# sha256=c50a16c05ccd7fe7dd6d6cfb539f4e9a491d50f9ed7a5c902fec638f7d0d27be package=xorg-libxdmcp-1.1.5-hb03c661_2
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxdmcp-1.1.5-hb03c661_2.conda#c50a16c05ccd7fe7dd6d6cfb539f4e9a491d50f9ed7a5c902fec638f7d0d27be
-# sha256=afc3b27b2cbb0487c1d0e963f96e71181ecfb623a24fb393bb19ff974a6382a1 package=pthread-stubs-0.4-hb03c661_1003
-https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb03c661_1003.conda#afc3b27b2cbb0487c1d0e963f96e71181ecfb623a24fb393bb19ff974a6382a1
-# sha256=82e134c8a08b1eed9a2ed8ab578b89aa1730dcde3dea8dd87645ed0637878e54 package=libdeflate-1.25-hd45a770_1
-https://conda.anaconda.org/conda-forge/linux-64/libdeflate-1.25-hd45a770_1.conda#82e134c8a08b1eed9a2ed8ab578b89aa1730dcde3dea8dd87645ed0637878e54
-# sha256=a5510cbcea3b9e9ab24b336429de997fa727af1dba323031500a962a20e38600 package=libgfortran5-16.2.0-h6b99dfc_4
-https://conda.anaconda.org/conda-forge/linux-64/libgfortran5-16.2.0-h6b99dfc_4.conda#a5510cbcea3b9e9ab24b336429de997fa727af1dba323031500a962a20e38600
-# sha256=a1a241d172c1ccab067ba245206dd048bc3c2d1b84504b53c9468e99adfc16a1 package=tk-8.6.13-noxft_h1df4ec4_4
+# sha256=24090e675d34403b4ee1cd4372d8f6c0937da7ecfd66a19a57cac2ed0f4ea793 package=libgcc-16.2.0-ha9f2e26_4.conda
+https://conda.anaconda.org/conda-forge/linux-64/libgcc-16.2.0-ha9f2e26_4.conda#24090e675d34403b4ee1cd4372d8f6c0937da7ecfd66a19a57cac2ed0f4ea793
+# sha256=a1a241d172c1ccab067ba245206dd048bc3c2d1b84504b53c9468e99adfc16a1 package=tk-8.6.13-noxft_h1df4ec4_4.conda
 https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h1df4ec4_4.conda#a1a241d172c1ccab067ba245206dd048bc3c2d1b84504b53c9468e99adfc16a1
-# sha256=4747b2d6a8336f52343bceb8a1ebf41a9e6e665b9d2e3f989972de53a310599e package=openssl-3.6.4-h781a0a9_0
-https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.4-h781a0a9_0.conda#4747b2d6a8336f52343bceb8a1ebf41a9e6e665b9d2e3f989972de53a310599e
-# sha256=5d46557214ed184381dafe835b7c94a474a1c3b307a08a250b1ea4779b44ffb3 package=ncurses-6.6-hdb14827_1
+# sha256=5d46557214ed184381dafe835b7c94a474a1c3b307a08a250b1ea4779b44ffb3 package=ncurses-6.6-hdb14827_1.conda
 https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_1.conda#5d46557214ed184381dafe835b7c94a474a1c3b307a08a250b1ea4779b44ffb3
-# sha256=927fe72b054277cde6cb82597d0fcf6baf127dcbce2e0a9d8925a68f1265eef5 package=libnsl-2.0.1-hb9d3cd8_1
+# sha256=927fe72b054277cde6cb82597d0fcf6baf127dcbce2e0a9d8925a68f1265eef5 package=libnsl-2.0.1-hb9d3cd8_1.conda
 https://conda.anaconda.org/conda-forge/linux-64/libnsl-2.0.1-hb9d3cd8_1.conda#927fe72b054277cde6cb82597d0fcf6baf127dcbce2e0a9d8925a68f1265eef5
-# sha256=9787df8c22a59c9a70d3e5a10db9ad663485e75e9ccc3f09bd092cb7b95e0dab package=liblzma-5.8.3-hb03c661_1
+# sha256=9787df8c22a59c9a70d3e5a10db9ad663485e75e9ccc3f09bd092cb7b95e0dab package=liblzma-5.8.3-hb03c661_1.conda
 https://conda.anaconda.org/conda-forge/linux-64/liblzma-5.8.3-hb03c661_1.conda#9787df8c22a59c9a70d3e5a10db9ad663485e75e9ccc3f09bd092cb7b95e0dab
-# sha256=d0f2fd77aad83641c11bc3686bac677e99869f1d62b99e5064c9d99af8bfde6a package=libnl-3.11.0-hb03c661_1
-https://conda.anaconda.org/conda-forge/linux-64/libnl-3.11.0-hb03c661_1.conda#d0f2fd77aad83641c11bc3686bac677e99869f1d62b99e5064c9d99af8bfde6a
-# sha256=09e706cb388d3ea977fabcee8e28384bdaad8ce1fc49340df5f868a2bd95a7da package=json-c-0.18-h6688a6e_0
-https://conda.anaconda.org/conda-forge/linux-64/json-c-0.18-h6688a6e_0.conda#09e706cb388d3ea977fabcee8e28384bdaad8ce1fc49340df5f868a2bd95a7da
-# sha256=ea02425c898d6694167952794e9a865e02e14e9c844efb067374f90b9ce8ce33 package=xorg-xproto-7.0.31-hb9d3cd8_1008
-https://conda.anaconda.org/conda-forge/linux-64/xorg-xproto-7.0.31-hb9d3cd8_1008.conda#ea02425c898d6694167952794e9a865e02e14e9c844efb067374f90b9ce8ce33
-# sha256=c8c7583ef063bc3c430f1d48298e5ad24f796a35c22ed5b14183325825a61106 package=libffi-3.7.0-h81df57d_1
-https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda#c8c7583ef063bc3c430f1d48298e5ad24f796a35c22ed5b14183325825a61106
-# sha256=16feffd9ddbbe5b718515d38ee376c685ba95491cd901244e24671d20b952a77 package=libexpat-2.8.1-hecca717_1
-https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_1.conda#16feffd9ddbbe5b718515d38ee376c685ba95491cd901244e24671d20b952a77
-# sha256=f7e9292dd219a6435bbb1223da9586c3e70d66d169c5a92f08db3f2127df04e9 package=libxcrypt-4.4.38-h280c20c_0
-https://conda.anaconda.org/conda-forge/linux-64/libxcrypt-4.4.38-h280c20c_0.conda#f7e9292dd219a6435bbb1223da9586c3e70d66d169c5a92f08db3f2127df04e9
-# sha256=9b1bdce27a7e31f7d241aeecff67a1f3101d52a2b1e33ccc2cdf2613072bf81f package=libuuid-2.42.2-h5347b49_0
-https://conda.anaconda.org/conda-forge/linux-64/libuuid-2.42.2-h5347b49_0.conda#9b1bdce27a7e31f7d241aeecff67a1f3101d52a2b1e33ccc2cdf2613072bf81f
-# sha256=cbf891f6cc1a859347680af1c8562bc6b033bf182a2a3bb536016932be3206de package=xorg-libxau-1.0.12-hb03c661_2
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxau-1.0.12-hb03c661_2.conda#cbf891f6cc1a859347680af1c8562bc6b033bf182a2a3bb536016932be3206de
-# sha256=c19eefb87d70d9b4b0629fa48414a155a47a1be4f04583ae71ed8c5a9a32fdcb package=libpng-1.6.58-h922cc85_1
-https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.58-h922cc85_1.conda#c19eefb87d70d9b4b0629fa48414a155a47a1be4f04583ae71ed8c5a9a32fdcb
-# sha256=bba8538e6538ed58a8479b332337b96986561f975d06cfa2039a016c2d246ee4 package=libjpeg-turbo-3.2.0-hb03c661_1
-https://conda.anaconda.org/conda-forge/linux-64/libjpeg-turbo-3.2.0-hb03c661_1.conda#bba8538e6538ed58a8479b332337b96986561f975d06cfa2039a016c2d246ee4
-# sha256=1a0d382c515ebf55f8ee1f38c8b81bc95af5c2acc42ad53b66bc5df932032f96 package=bzip2-1.0.8-hda65f42_10
-https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda#1a0d382c515ebf55f8ee1f38c8b81bc95af5c2acc42ad53b66bc5df932032f96
-# sha256=d8e66c14e23f2b3c70410cff5979d9d357e6edfb990b28d8e630852f4d395629 package=libgcc-ng-16.2.0-h69a702a_4
-https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-16.2.0-h69a702a_4.conda#d8e66c14e23f2b3c70410cff5979d9d357e6edfb990b28d8e630852f4d395629
-# sha256=40b792b0186c1e8859280a1f6f19a54fc50a11b32724fc7b637009c1a9bd302b package=libstdcxx-16.2.0-h934c35e_4
+# sha256=40b792b0186c1e8859280a1f6f19a54fc50a11b32724fc7b637009c1a9bd302b package=libstdcxx-16.2.0-h934c35e_4.conda
 https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-16.2.0-h934c35e_4.conda#40b792b0186c1e8859280a1f6f19a54fc50a11b32724fc7b637009c1a9bd302b
-# sha256=ea46b0ca0fa16af1f8b329b740e6cd8b4577c5378fa8717b28a885f70668633d package=libdrm-2.4.129-h7cc23a3_0
-https://conda.anaconda.org/conda-forge/linux-64/libdrm-2.4.129-h7cc23a3_0.conda#ea46b0ca0fa16af1f8b329b740e6cd8b4577c5378fa8717b28a885f70668633d
-# sha256=d37124d0f51816e7d5e3a94bfc9ed3d6174d077f9b4f832d20c5a08b52bebf1f package=libbrotlienc-1.2.0-h018ffa1_3
-https://conda.anaconda.org/conda-forge/linux-64/libbrotlienc-1.2.0-h018ffa1_3.conda#d37124d0f51816e7d5e3a94bfc9ed3d6174d077f9b4f832d20c5a08b52bebf1f
-# sha256=dad31b6d104973deb89710929a35651033aad692d4e7793cdb5b786a9bd54678 package=libbrotlidec-1.2.0-ha411449_3
-https://conda.anaconda.org/conda-forge/linux-64/libbrotlidec-1.2.0-ha411449_3.conda#dad31b6d104973deb89710929a35651033aad692d4e7793cdb5b786a9bd54678
-# sha256=67ca48ec0dea72e53e1b41269124bf72538e01d64d4801d3ed16788616632c72 package=libudev1-261.2-h6f4a2f1_0
-https://conda.anaconda.org/conda-forge/linux-64/libudev1-261.2-h6f4a2f1_0.conda#67ca48ec0dea72e53e1b41269124bf72538e01d64d4801d3ed16788616632c72
-# sha256=35c60a4b9e6475fbe5376557a813ce48af3427d4418c37117cd976d8fb1ab761 package=libsystemd0-261.2-h6f4a2f1_0
-https://conda.anaconda.org/conda-forge/linux-64/libsystemd0-261.2-h6f4a2f1_0.conda#35c60a4b9e6475fbe5376557a813ce48af3427d4418c37117cd976d8fb1ab761
-# sha256=7653be4d88a4d74676c38dd892914d027dcecc0c65c406be772d31cb641f8cfd package=libgfortran-16.2.0-h69a702a_4
-https://conda.anaconda.org/conda-forge/linux-64/libgfortran-16.2.0-h69a702a_4.conda#7653be4d88a4d74676c38dd892914d027dcecc0c65c406be772d31cb641f8cfd
-# sha256=7e463000fa1cba3f3a6597b776f6ab301d425a96e3bc20d0d9d76a3b9f237aa3 package=libssh2-1.11.1-h6154650_1
-https://conda.anaconda.org/conda-forge/linux-64/libssh2-1.11.1-h6154650_1.conda#7e463000fa1cba3f3a6597b776f6ab301d425a96e3bc20d0d9d76a3b9f237aa3
-# sha256=6473eb8caf2aae830f37caa93db9b26dddf7ac84b63229e8bf7fc0e5c3ab95b0 package=libedit-3.1.20250104-pl5321h373387f_1
-https://conda.anaconda.org/conda-forge/linux-64/libedit-3.1.20250104-pl5321h373387f_1.conda#6473eb8caf2aae830f37caa93db9b26dddf7ac84b63229e8bf7fc0e5c3ab95b0
-# sha256=01b3fe073a66e321970d09e04b388708f8cbdca5cdfbfcb7c9eeb470ad10383d package=readline-8.3-hd6e31c0_1
+# sha256=c8c7583ef063bc3c430f1d48298e5ad24f796a35c22ed5b14183325825a61106 package=libffi-3.7.0-h81df57d_1.conda
+https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda#c8c7583ef063bc3c430f1d48298e5ad24f796a35c22ed5b14183325825a61106
+# sha256=16feffd9ddbbe5b718515d38ee376c685ba95491cd901244e24671d20b952a77 package=libexpat-2.8.1-hecca717_1.conda
+https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_1.conda#16feffd9ddbbe5b718515d38ee376c685ba95491cd901244e24671d20b952a77
+# sha256=1a0d382c515ebf55f8ee1f38c8b81bc95af5c2acc42ad53b66bc5df932032f96 package=bzip2-1.0.8-hda65f42_10.conda
+https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda#1a0d382c515ebf55f8ee1f38c8b81bc95af5c2acc42ad53b66bc5df932032f96
+# sha256=f7e9292dd219a6435bbb1223da9586c3e70d66d169c5a92f08db3f2127df04e9 package=libxcrypt-4.4.38-h280c20c_0.conda
+https://conda.anaconda.org/conda-forge/linux-64/libxcrypt-4.4.38-h280c20c_0.conda#f7e9292dd219a6435bbb1223da9586c3e70d66d169c5a92f08db3f2127df04e9
+# sha256=9b1bdce27a7e31f7d241aeecff67a1f3101d52a2b1e33ccc2cdf2613072bf81f package=libuuid-2.42.2-h5347b49_0.conda
+https://conda.anaconda.org/conda-forge/linux-64/libuuid-2.42.2-h5347b49_0.conda#9b1bdce27a7e31f7d241aeecff67a1f3101d52a2b1e33ccc2cdf2613072bf81f
+# sha256=01b3fe073a66e321970d09e04b388708f8cbdca5cdfbfcb7c9eeb470ad10383d package=readline-8.3-hd6e31c0_1.conda
 https://conda.anaconda.org/conda-forge/linux-64/readline-8.3-hd6e31c0_1.conda#01b3fe073a66e321970d09e04b388708f8cbdca5cdfbfcb7c9eeb470ad10383d
-# sha256=bc1e8177a4ebbbfcda98b6f4a1575f3337e69f0d2f1025a84570533ca27b89eb package=expat-2.8.1-hecca717_1
-https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.1-hecca717_1.conda#bc1e8177a4ebbbfcda98b6f4a1575f3337e69f0d2f1025a84570533ca27b89eb
-# sha256=ef907caee0665cf3b0f775602cc50e388e3bade8ce22ecade0873ff26604b2fd package=xorg-libsm-1.2.6-h0d788c3_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libsm-1.2.6-h0d788c3_1.conda#ef907caee0665cf3b0f775602cc50e388e3bade8ce22ecade0873ff26604b2fd
-# sha256=ce25a1efa85a78a3ce3b16721d9c36153814adbf2fb004a15f72ec69894b4cb1 package=libxcb-1.17.0-hb83e432_1
-https://conda.anaconda.org/conda-forge/linux-64/libxcb-1.17.0-hb83e432_1.conda#ce25a1efa85a78a3ce3b16721d9c36153814adbf2fb004a15f72ec69894b4cb1
-# sha256=ec607dd5445dd17ff6bf8b7fe6832e5504c226dd91d3aaea7ba83569808b0ce4 package=libfreetype6-2.14.3-h5e6c136_2
-https://conda.anaconda.org/conda-forge/linux-64/libfreetype6-2.14.3-h5e6c136_2.conda#ec607dd5445dd17ff6bf8b7fe6832e5504c226dd91d3aaea7ba83569808b0ce4
-# sha256=9ebb10a4eb3be51ae67d85c679f5a7a50cb040ed25c783e6331a225ea09991d4 package=pcre2-10.47-h8b3dc9c_1
-https://conda.anaconda.org/conda-forge/linux-64/pcre2-10.47-h8b3dc9c_1.conda#9ebb10a4eb3be51ae67d85c679f5a7a50cb040ed25c783e6331a225ea09991d4
-# sha256=2e14399d81fb348e9d231a82ca4d816bf855206923759b69ad006ba482764131 package=libevent-2.1.12-hf998b51_1
-https://conda.anaconda.org/conda-forge/linux-64/libevent-2.1.12-hf998b51_1.conda#2e14399d81fb348e9d231a82ca4d816bf855206923759b69ad006ba482764131
-# sha256=8de2f0cd8a659b01abf86e7fbb8cea4f28ada62fd288429a2bbc040db1b98dd0 package=opencl-headers-2025.06.13-hecca717_0
-https://conda.anaconda.org/conda-forge/linux-64/opencl-headers-2025.06.13-hecca717_0.conda#8de2f0cd8a659b01abf86e7fbb8cea4f28ada62fd288429a2bbc040db1b98dd0
-# sha256=9f07834f0c546ab14d885ce0366285f61f44e326c0edd1fc63b8294e113ae432 package=icu-78.3-py310h44b86e0_2
+# sha256=9f07834f0c546ab14d885ce0366285f61f44e326c0edd1fc63b8294e113ae432 package=icu-78.3-py310h44b86e0_2.conda
 https://conda.anaconda.org/conda-forge/linux-64/icu-78.3-py310h44b86e0_2.conda#9f07834f0c546ab14d885ce0366285f61f44e326c0edd1fc63b8294e113ae432
-# sha256=5afc3265622de6663f4179bc9023e1c1cac06b9c8620a0bf54aa0a0c232cf15a package=mpg123-1.33.7-h877a99e_1
-https://conda.anaconda.org/conda-forge/linux-64/mpg123-1.33.7-h877a99e_1.conda#5afc3265622de6663f4179bc9023e1c1cac06b9c8620a0bf54aa0a0c232cf15a
-# sha256=ca494c99c7e5ecc1b4cd2f72b5584cef3d4ce631d23511184411abcbb90a21a5 package=libvorbis-1.3.7-h54a6638_2
-https://conda.anaconda.org/conda-forge/linux-64/libvorbis-1.3.7-h54a6638_2.conda#ca494c99c7e5ecc1b4cd2f72b5584cef3d4ce631d23511184411abcbb90a21a5
-# sha256=e755e234236bdda3d265ae82e5b0581d259a9279e3e5b31d745dc43251ad64fb package=libflac-1.5.0-he200343_1
-https://conda.anaconda.org/conda-forge/linux-64/libflac-1.5.0-he200343_1.conda#e755e234236bdda3d265ae82e5b0581d259a9279e3e5b31d745dc43251ad64fb
-# sha256=80398daac34dfe10d88c92ef64f6ff85f52950cab8b2bdfc2d00cc176ed7edff package=minizip-4.2.2-hb71707f_0
-https://conda.anaconda.org/conda-forge/linux-64/minizip-4.2.2-hb71707f_0.conda#80398daac34dfe10d88c92ef64f6ff85f52950cab8b2bdfc2d00cc176ed7edff
-# sha256=23c7cf726b883f5e7c1bfa6bf24bceafa8be87245a7690e0b5c974eb320a9e83 package=libhwy-1.4.0-h57c4cff_1
-https://conda.anaconda.org/conda-forge/linux-64/libhwy-1.4.0-h57c4cff_1.conda#23c7cf726b883f5e7c1bfa6bf24bceafa8be87245a7690e0b5c974eb320a9e83
-# sha256=3d17b7aa90610afc65356e9e6149aeac0b2df19deda73a51f0a09cf04fd89286 package=liburing-2.14-hb700be7_0
-https://conda.anaconda.org/conda-forge/linux-64/liburing-2.14-hb700be7_0.conda#3d17b7aa90610afc65356e9e6149aeac0b2df19deda73a51f0a09cf04fd89286
-# sha256=71c8b9d5c72473752a0bb6e91b01dd209a03916cb71f36cc6a564e3a2a132d7a package=libunwind-1.8.3-h65a8314_0
-https://conda.anaconda.org/conda-forge/linux-64/libunwind-1.8.3-h65a8314_0.conda#71c8b9d5c72473752a0bb6e91b01dd209a03916cb71f36cc6a564e3a2a132d7a
-# sha256=d06c4f7a7b95ce639b09d1f92a147e792f8974bf209114bda21836c7eee7c0f8 package=libvulkan-headers-1.4.357.0-h4dbf13b_1
-https://conda.anaconda.org/conda-forge/linux-64/libvulkan-headers-1.4.357.0-h4dbf13b_1.conda#d06c4f7a7b95ce639b09d1f92a147e792f8974bf209114bda21836c7eee7c0f8
-# sha256=48f3f6a76c34b2cfe80de9ce7f2283ecb55d5ed47367ba91e8bb8104e12b8f11 package=snappy-1.2.2-h03e3b7b_1
-https://conda.anaconda.org/conda-forge/linux-64/snappy-1.2.2-h03e3b7b_1.conda#48f3f6a76c34b2cfe80de9ce7f2283ecb55d5ed47367ba91e8bb8104e12b8f11
-# sha256=7547142ab1352132adf98d555ed955badd96c9f277cbd054ae52f7edd6cf6cb8 package=spirv-tools-2025.5-hb700be7_0
-https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.5-hb700be7_0.conda#7547142ab1352132adf98d555ed955badd96c9f277cbd054ae52f7edd6cf6cb8
-# sha256=11a2f54a6f391e25738bce0023e6ef499600147bbcf21c1fa69d2e251b03cc6a package=libnghttp2-1.68.1-h74cf4be_1
-https://conda.anaconda.org/conda-forge/linux-64/libnghttp2-1.68.1-h74cf4be_1.conda#11a2f54a6f391e25738bce0023e6ef499600147bbcf21c1fa69d2e251b03cc6a
-# sha256=b8c0e930183e6b7f83cd35ace102f2b8c2f0faae41dc05255dc72f247dfc556a package=lz4-c-1.10.0-hee9eb32_2
-https://conda.anaconda.org/conda-forge/linux-64/lz4-c-1.10.0-hee9eb32_2.conda#b8c0e930183e6b7f83cd35ace102f2b8c2f0faae41dc05255dc72f247dfc556a
-# sha256=bf9fdebf55d8bc99d83531cdffda00703f4dc5f93a1a956768c147362c72feda package=lerc-4.2.0-hdb68285_0
-https://conda.anaconda.org/conda-forge/linux-64/lerc-4.2.0-hdb68285_0.conda#bf9fdebf55d8bc99d83531cdffda00703f4dc5f93a1a956768c147362c72feda
-# sha256=43f30e6fd8cbe1fef59da760d1847c9ceff3fb69ceee7fd4a34538b0927959dd package=imath-3.2.2-hde8ca8f_0
-https://conda.anaconda.org/conda-forge/linux-64/imath-3.2.2-hde8ca8f_0.conda#43f30e6fd8cbe1fef59da760d1847c9ceff3fb69ceee7fd4a34538b0927959dd
-# sha256=320dfc59a94cb9e3635bda71b9e62278b34aa2fdaea0caa6832ddb9b37e9ccd5 package=muparser-2.3.5-h5888daf_0
-https://conda.anaconda.org/conda-forge/linux-64/muparser-2.3.5-h5888daf_0.conda#320dfc59a94cb9e3635bda71b9e62278b34aa2fdaea0caa6832ddb9b37e9ccd5
-# sha256=08896dcd94e14a83f247e91748444e610f344ab42d80cbf2b6082b481c3f8f4b package=geos-3.14.1-h480dda7_0
-https://conda.anaconda.org/conda-forge/linux-64/geos-3.14.1-h480dda7_0.conda#08896dcd94e14a83f247e91748444e610f344ab42d80cbf2b6082b481c3f8f4b
-# sha256=a8f1333274382d23721d6f72483ece364631231f8ac3f74389951b1ff2820148 package=wayland-1.26.0-h1964d1d_1
-https://conda.anaconda.org/conda-forge/linux-64/wayland-1.26.0-h1964d1d_1.conda#a8f1333274382d23721d6f72483ece364631231f8ac3f74389951b1ff2820148
-# sha256=4cdebd87b76cf53a58a08ebd6d15336daa79c5f0aa34d83a895ac503c0203632 package=libstdcxx-ng-16.2.0-hdf11a46_4
-https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-ng-16.2.0-hdf11a46_4.conda#4cdebd87b76cf53a58a08ebd6d15336daa79c5f0aa34d83a895ac503c0203632
-# sha256=a627704a4dc57459dbcdec8296c3f7f1801e53d441b7cadb56a2caa57920a5b3 package=eigen-3.4.0-h54a6638_2
-https://conda.anaconda.org/conda-forge/linux-64/eigen-3.4.0-h54a6638_2.conda#a627704a4dc57459dbcdec8296c3f7f1801e53d441b7cadb56a2caa57920a5b3
-# sha256=43068f6bac747852a7eb281e51d9cc1e3004eb57e0e69ab48a41025a24c0fa98 package=libnvjpeg-12.3.5.92-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/libnvjpeg-12.3.5.92-h5888daf_1.conda#43068f6bac747852a7eb281e51d9cc1e3004eb57e0e69ab48a41025a24c0fa98
-# sha256=254737c0ffb506f3a69aaeb11ea95b8e0fb2689d9e87d6bba13b575fe5d00c1c package=libnvjitlink-12.8.93-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/libnvjitlink-12.8.93-h5888daf_1.conda#254737c0ffb506f3a69aaeb11ea95b8e0fb2689d9e87d6bba13b575fe5d00c1c
-# sha256=8c3936b40292638268dd5ba0bc5c0dbac81d35898e3adeaa47f7a5f746fdff7c package=libnvfatbin-12.8.90-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/libnvfatbin-12.8.90-h5888daf_1.conda#8c3936b40292638268dd5ba0bc5c0dbac81d35898e3adeaa47f7a5f746fdff7c
-# sha256=ca37be30fb0f2a646c30007412e0eb0b9ab9afb9b193476c170abeaf91601989 package=libnpp-12.3.3.100-h9ab20c4_1
-https://conda.anaconda.org/conda-forge/linux-64/libnpp-12.3.3.100-h9ab20c4_1.conda#ca37be30fb0f2a646c30007412e0eb0b9ab9afb9b193476c170abeaf91601989
-# sha256=379b2fd280bc4f4da999ab6560f56d4d3c02485089fb5f50b8933731a3eb5078 package=libcurand-10.3.9.90-h9ab20c4_1
-https://conda.anaconda.org/conda-forge/linux-64/libcurand-10.3.9.90-h9ab20c4_1.conda#379b2fd280bc4f4da999ab6560f56d4d3c02485089fb5f50b8933731a3eb5078
-# sha256=1a38727a9666b7020ad844fd5074693b2c378d0161f58401d9f8488bdeb920a1 package=libcufft-11.3.3.83-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/libcufft-11.3.3.83-h5888daf_1.conda#1a38727a9666b7020ad844fd5074693b2c378d0161f58401d9f8488bdeb920a1
-# sha256=294b789d6bce9944fc5987c86dc1cdcdbc4eb965f559b81749dbf03b43e6c135 package=cuda-cudart-12.8.90-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/cuda-cudart-12.8.90-h5888daf_1.conda#294b789d6bce9944fc5987c86dc1cdcdbc4eb965f559b81749dbf03b43e6c135
-# sha256=a0105eb88f76073bbb30169312e797ed5449ebb4e964a756104d6e54633d17ef package=libglu-9.0.3-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/libglu-9.0.3-h5888daf_1.conda#a0105eb88f76073bbb30169312e797ed5449ebb4e964a756104d6e54633d17ef
-# sha256=38edf4f501ccbb996cc9f0797fcf404c12d4aeef974308cf8b997b470409c171 package=cuda-nvrtc-12.8.93-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/cuda-nvrtc-12.8.93-h5888daf_1.conda#38edf4f501ccbb996cc9f0797fcf404c12d4aeef974308cf8b997b470409c171
-# sha256=3ae98c2ca54928b2c72dbb4bd8ea229d3c865ad39367d377908294d9fb1e6f2c package=tinyxml2-11.0.0-h3f2d84a_0
-https://conda.anaconda.org/conda-forge/linux-64/tinyxml2-11.0.0-h3f2d84a_0.conda#3ae98c2ca54928b2c72dbb4bd8ea229d3c865ad39367d377908294d9fb1e6f2c
-# sha256=2b68f0c4bca718a15f6828caeba80af183429233043c86dd971b2a10716ba648 package=urdfdom_headers-2.1.2-hb700be7_0
-https://conda.anaconda.org/conda-forge/linux-64/urdfdom_headers-2.1.2-hb700be7_0.conda#2b68f0c4bca718a15f6828caeba80af183429233043c86dd971b2a10716ba648
-# sha256=89c84f5b26028a9d0f5c4014330703e7dff73ba0c98f90103e9cef6b43a5323c package=libusb-1.0.29-h73b1eb8_0
-https://conda.anaconda.org/conda-forge/linux-64/libusb-1.0.29-h73b1eb8_0.conda#89c84f5b26028a9d0f5c4014330703e7dff73ba0c98f90103e9cef6b43a5323c
-# sha256=93e53eeaf6e7b8d2c349cd52005720aaceb47e7ead0a741290567b2907e3a42d package=rdma-core-63.1-h192683f_0
-https://conda.anaconda.org/conda-forge/linux-64/rdma-core-63.1-h192683f_0.conda#93e53eeaf6e7b8d2c349cd52005720aaceb47e7ead0a741290567b2907e3a42d
-# sha256=23392fc4f4e5ba230fcd1ef825878ba5ca7ee4f6259fac0cbb13299134b7bf7a package=libopenblas-0.3.34-pthreads_h94d23a6_0
-https://conda.anaconda.org/conda-forge/linux-64/libopenblas-0.3.34-pthreads_h94d23a6_0.conda#23392fc4f4e5ba230fcd1ef825878ba5ca7ee4f6259fac0cbb13299134b7bf7a
-# sha256=2a5c38c85e63df84c4e69ee71439841ce570d259ae3060627bb9a49a938d66f4 package=krb5-1.22.2-hbc21106_2
-https://conda.anaconda.org/conda-forge/linux-64/krb5-1.22.2-hbc21106_2.conda#2a5c38c85e63df84c4e69ee71439841ce570d259ae3060627bb9a49a938d66f4
-# sha256=ad8cab7e07e2af268449c2ce855cbb51f43f4664936eff679b1f3862e6e4b01d package=xcb-util-0.4.1-h4f16b4b_2
-https://conda.anaconda.org/conda-forge/linux-64/xcb-util-0.4.1-h4f16b4b_2.conda#ad8cab7e07e2af268449c2ce855cbb51f43f4664936eff679b1f3862e6e4b01d
-# sha256=31d44f297ad87a1e6510895740325a635dd204556aa7e079194a0034cdd7e66a package=xcb-util-wm-0.4.2-hb711507_0
-https://conda.anaconda.org/conda-forge/linux-64/xcb-util-wm-0.4.2-hb711507_0.conda#31d44f297ad87a1e6510895740325a635dd204556aa7e079194a0034cdd7e66a
-# sha256=2d401dadc43855971ce008344a4b5bd804aca9487d8ebd83328592217daca3df package=xcb-util-renderutil-0.3.10-hb711507_0
-https://conda.anaconda.org/conda-forge/linux-64/xcb-util-renderutil-0.3.10-hb711507_0.conda#2d401dadc43855971ce008344a4b5bd804aca9487d8ebd83328592217daca3df
-# sha256=546e3ee01e95a4c884b6401284bb22da449a2f4daf508d038fdfa0712fe4cc69 package=xcb-util-keysyms-0.4.1-hb711507_0
-https://conda.anaconda.org/conda-forge/linux-64/xcb-util-keysyms-0.4.1-hb711507_0.conda#546e3ee01e95a4c884b6401284bb22da449a2f4daf508d038fdfa0712fe4cc69
-# sha256=68053eebfa9f0d91666786c8fb5839d989aa9b869add92cb8815228bb2d7302c package=xorg-libx11-1.8.13-he1eb515_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libx11-1.8.13-he1eb515_1.conda#68053eebfa9f0d91666786c8fb5839d989aa9b869add92cb8815228bb2d7302c
-# sha256=fb12ecb46c30d18d928c0e8fc346ab13b5f6fc8a9cacae4f2f4bb188782586f5 package=libfreetype-2.14.3-ha770c72_2
-https://conda.anaconda.org/conda-forge/linux-64/libfreetype-2.14.3-ha770c72_2.conda#fb12ecb46c30d18d928c0e8fc346ab13b5f6fc8a9cacae4f2f4bb188782586f5
-# sha256=4499458124bcf0bd45e8bd17576f9f007cb1373cb3b01659105443f522bab45c package=libglib-2.88.3-h45c3219_1
-https://conda.anaconda.org/conda-forge/linux-64/libglib-2.88.3-h45c3219_1.conda#4499458124bcf0bd45e8bd17576f9f007cb1373cb3b01659105443f522bab45c
-# sha256=75f3bf733523a338f73d6c276c4a26634877cd970edb558f2769d9fa52b100a9 package=ocl-icd-2.3.4-hb03c661_1
-https://conda.anaconda.org/conda-forge/linux-64/ocl-icd-2.3.4-hb03c661_1.conda#75f3bf733523a338f73d6c276c4a26634877cd970edb558f2769d9fa52b100a9
-# sha256=087d4de023f22d6a28b9e1b818961dd41e9bda6e9793590600ff16ca150bf9cb package=libxml2-16-2.15.3-hca6bf5a_1
-https://conda.anaconda.org/conda-forge/linux-64/libxml2-16-2.15.3-hca6bf5a_1.conda#087d4de023f22d6a28b9e1b818961dd41e9bda6e9793590600ff16ca150bf9cb
-# sha256=f20d70da54e5b31dd4a51fb1efeaafafd5ab6dd8d7ac9d1438eaa2526ac4ed3d package=libsqlite-3.53.4-h13e7031_1
+# sha256=f20d70da54e5b31dd4a51fb1efeaafafd5ab6dd8d7ac9d1438eaa2526ac4ed3d package=libsqlite-3.53.4-h13e7031_1.conda
 https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.53.4-h13e7031_1.conda#f20d70da54e5b31dd4a51fb1efeaafafd5ab6dd8d7ac9d1438eaa2526ac4ed3d
-# sha256=dd489228e1916c7720c925248d0ba12803d1dc8b9898be0c51f4ab37bab6ffa5 package=libboost-1.88.0-hd24cca6_7
-https://conda.anaconda.org/conda-forge/linux-64/libboost-1.88.0-hd24cca6_7.conda#dd489228e1916c7720c925248d0ba12803d1dc8b9898be0c51f4ab37bab6ffa5
-# sha256=09e8effdc89bc5d021349318d32b85594f5b8d8e3ab8f90a85b81f8fe695a566 package=libpsl-0.23.1-hd9e3e90_1
-https://conda.anaconda.org/conda-forge/linux-64/libpsl-0.23.1-hd9e3e90_1.conda#09e8effdc89bc5d021349318d32b85594f5b8d8e3ab8f90a85b81f8fe695a566
-# sha256=605980121ad3ee9393a9b53fb0996929c9732f8fc6b9f796d25244ca6fa23032 package=xerces-c-3.3.0-hd9031aa_1
-https://conda.anaconda.org/conda-forge/linux-64/xerces-c-3.3.0-hd9031aa_1.conda#605980121ad3ee9393a9b53fb0996929c9732f8fc6b9f796d25244ca6fa23032
-# sha256=560a8561c5cc1f3c05b1e91d93436eb14fe55beb29c27e02623b42960d64d91f package=lame-4.0-h770b6ad_1
-https://conda.anaconda.org/conda-forge/linux-64/lame-4.0-h770b6ad_1.conda#560a8561c5cc1f3c05b1e91d93436eb14fe55beb29c27e02623b42960d64d91f
-# sha256=c8960e00a6db69b85c16c693ce05484facf20f1a80430552145f652a880e0d2a package=freexl-2.0.0-h9dce30a_2
-https://conda.anaconda.org/conda-forge/linux-64/freexl-2.0.0-h9dce30a_2.conda#c8960e00a6db69b85c16c693ce05484facf20f1a80430552145f652a880e0d2a
-# sha256=0c8a78c6a42a6e4c6de3a5e82d692f60400d43f4cc80591745f28b37daad9c70 package=libjxl-0.11.2-h174a0a3_1
-https://conda.anaconda.org/conda-forge/linux-64/libjxl-0.11.2-h174a0a3_1.conda#0c8a78c6a42a6e4c6de3a5e82d692f60400d43f4cc80591745f28b37daad9c70
-# sha256=f5c862af017fc7133ced3470a45234a2a62eb21277de9c077304fd375a1daf05 package=glslang-15.4.0-h7d2aa7d_0
-https://conda.anaconda.org/conda-forge/linux-64/glslang-15.4.0-h7d2aa7d_0.conda#f5c862af017fc7133ced3470a45234a2a62eb21277de9c077304fd375a1daf05
-# sha256=e7af5d1183b06a206192ff440e08db1c4e8b2ca1f8376ee45fb2f3a85d4ee45d package=blosc-1.21.6-he440d0b_1
-https://conda.anaconda.org/conda-forge/linux-64/blosc-1.21.6-he440d0b_1.conda#e7af5d1183b06a206192ff440e08db1c4e8b2ca1f8376ee45fb2f3a85d4ee45d
-# sha256=10e125da82ca93e09191e66e5a94d566b2cf8d4024e2a0db3a9114297447e0d9 package=libtiff-4.7.2-hcc2c06a_1
-https://conda.anaconda.org/conda-forge/linux-64/libtiff-4.7.2-hcc2c06a_1.conda#10e125da82ca93e09191e66e5a94d566b2cf8d4024e2a0db3a9114297447e0d9
-# sha256=eb4082a5135102f5ba9c302da13164d4ed1181d5f0db9d49e5e11a815a7b526f package=librttopo-1.1.0-h46dd2a8_20
-https://conda.anaconda.org/conda-forge/linux-64/librttopo-1.1.0-h46dd2a8_20.conda#eb4082a5135102f5ba9c302da13164d4ed1181d5f0db9d49e5e11a815a7b526f
-# sha256=8f35c244b1631a4f31fb1d66ab6e1d9bfac0ca9b679deced1112c7225b3ad138 package=pcre-8.45-h9c3ff4c_0
-https://conda.anaconda.org/conda-forge/linux-64/pcre-8.45-h9c3ff4c_0.tar.bz2#8f35c244b1631a4f31fb1d66ab6e1d9bfac0ca9b679deced1112c7225b3ad138
-# sha256=2aad2aeff7c69a2d7eecd7b662eef756b27d6a6b96f3e2c2a7071340ce14543e package=uriparser-0.9.8-hac33072_0
-https://conda.anaconda.org/conda-forge/linux-64/uriparser-0.9.8-hac33072_0.conda#2aad2aeff7c69a2d7eecd7b662eef756b27d6a6b96f3e2c2a7071340ce14543e
-# sha256=29caeda123ea705e68de46dc3b86065ec78f5b44d7ae69b320cc57e136d2d9d7 package=console_bridge-1.0.2-h924138e_1
-https://conda.anaconda.org/conda-forge/linux-64/console_bridge-1.0.2-h924138e_1.tar.bz2#29caeda123ea705e68de46dc3b86065ec78f5b44d7ae69b320cc57e136d2d9d7
-# sha256=c97c95beedc098c5a9ec9250ac6eaf1a7db4c8475de0e4f42997df973133a7e3 package=libcusparse-12.5.8.93-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/libcusparse-12.5.8.93-h5888daf_1.conda#c97c95beedc098c5a9ec9250ac6eaf1a7db4c8475de0e4f42997df973133a7e3
-# sha256=886cafb7940ca6e0adbcbbd7b4c28bbf7fb2e02f4919f8604eda633b9716ba64 package=libcublas-12.8.5.5-h676940d_0
-https://conda.anaconda.org/conda-forge/linux-64/libcublas-12.8.5.5-h676940d_0.conda#886cafb7940ca6e0adbcbbd7b4c28bbf7fb2e02f4919f8604eda633b9716ba64
-# sha256=ba8de6a838bc0727ef8e5a1409c6735465b7b582627a9b4c2704126e53903f43 package=libfabric1-2.6.0-h6b3ec72_0
-https://conda.anaconda.org/conda-forge/linux-64/libfabric1-2.6.0-h6b3ec72_0.conda#ba8de6a838bc0727ef8e5a1409c6735465b7b582627a9b4c2704126e53903f43
-# sha256=97e6f7a2a7341f3dabd584389b24e58e3983445f0a11f5b11f73f947da443ad2 package=ucx-1.22.0-hb659a20_0
-https://conda.anaconda.org/conda-forge/linux-64/ucx-1.22.0-hb659a20_0.conda#97e6f7a2a7341f3dabd584389b24e58e3983445f0a11f5b11f73f947da443ad2
-# sha256=213f5df6ed25d19c4390666708a32ea457b1dcda64aca121f861b94671e2ed63 package=libcufile-1.13.1.3-h628e99a_1
-https://conda.anaconda.org/conda-forge/linux-64/libcufile-1.13.1.3-h628e99a_1.conda#213f5df6ed25d19c4390666708a32ea457b1dcda64aca121f861b94671e2ed63
-# sha256=39c7b3c5427b435c9c059ede9da61d46d42574e5b846ad37fdc3af4a5eab1e48 package=libblas-3.11.0-9_h4a7cf45_openblas
-https://conda.anaconda.org/conda-forge/linux-64/libblas-3.11.0-9_h4a7cf45_openblas.conda#39c7b3c5427b435c9c059ede9da61d46d42574e5b846ad37fdc3af4a5eab1e48
-# sha256=94b12ff8b30260d9de4fd7a28cca12e028e572cbc504fd42aa2646ec4a5bded7 package=xcb-util-image-0.4.0-hb711507_2
-https://conda.anaconda.org/conda-forge/linux-64/xcb-util-image-0.4.0-hb711507_2.conda#94b12ff8b30260d9de4fd7a28cca12e028e572cbc504fd42aa2646ec4a5bded7
-# sha256=3b04afd5d1a65d2d27ac2d49a63b01ab8bcd875776779ec63e337370ed38afdc package=xkeyboard-config-2.48-h280c20c_0
-https://conda.anaconda.org/conda-forge/linux-64/xkeyboard-config-2.48-h280c20c_0.conda#3b04afd5d1a65d2d27ac2d49a63b01ab8bcd875776779ec63e337370ed38afdc
-# sha256=6901f91d398811e4ec89d7e20a69abac02a7bfebfaf073338b7ea3d1a99685b7 package=xorg-libxrender-0.9.12-hb03c661_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxrender-0.9.12-hb03c661_1.conda#6901f91d398811e4ec89d7e20a69abac02a7bfebfaf073338b7ea3d1a99685b7
-# sha256=aec84f554fc897bf4085c7bc8b8f0740e4c224e13bca3cc51c93e7699d56f83a package=xorg-libxfixes-6.0.2-h7cc23a3_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxfixes-6.0.2-h7cc23a3_1.conda#aec84f554fc897bf4085c7bc8b8f0740e4c224e13bca3cc51c93e7699d56f83a
-# sha256=aa9bbe8b278aacc194e280ff5037f9f9a1f2c5b33ed97de8e7f01cfbe90dda43 package=xorg-libxext-1.3.7-h7cc23a3_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxext-1.3.7-h7cc23a3_1.conda#aa9bbe8b278aacc194e280ff5037f9f9a1f2c5b33ed97de8e7f01cfbe90dda43
-# sha256=d1f0d51aea6bcc5d915969cbed32e72a8ed6a95931b87357ef8d0866573688c4 package=libglx-1.7.0-ha4b6fd6_5
-https://conda.anaconda.org/conda-forge/linux-64/libglx-1.7.0-ha4b6fd6_5.conda#d1f0d51aea6bcc5d915969cbed32e72a8ed6a95931b87357ef8d0866573688c4
-# sha256=5a3eb10b18a97223ab06b3a7f0d7f56658db2f2800e2f2af95836fe3bf55ba63 package=fontconfig-2.18.3-h4db4eae_1
-https://conda.anaconda.org/conda-forge/linux-64/fontconfig-2.18.3-h4db4eae_1.conda#5a3eb10b18a97223ab06b3a7f0d7f56658db2f2800e2f2af95836fe3bf55ba63
-# sha256=612a8e0c1a6ecae23da54d81ef395f6ebb5c8e4468ec2611593ebce75876a4e0 package=freetype-2.14.3-ha770c72_2
-https://conda.anaconda.org/conda-forge/linux-64/freetype-2.14.3-ha770c72_2.conda#612a8e0c1a6ecae23da54d81ef395f6ebb5c8e4468ec2611593ebce75876a4e0
-# sha256=8bb557af1b2b7983cf56292336a1a1853f26555d9c6cecf1e5b2b96838c9da87 package=dbus-1.16.2-h24cb091_1
-https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h24cb091_1.conda#8bb557af1b2b7983cf56292336a1a1853f26555d9c6cecf1e5b2b96838c9da87
-# sha256=1706a008e8b929ad6881601709c262d8b10cb7c1de685920f960621291b6fe91 package=cuda-opencl-12.8.90-h5888daf_1
-https://conda.anaconda.org/conda-forge/linux-64/cuda-opencl-12.8.90-h5888daf_1.conda#1706a008e8b929ad6881601709c262d8b10cb7c1de685920f960621291b6fe91
-# sha256=a16a576a5844a3a0e1cdfc5e162b9fe9c64dccf6a93f44c293bb42851aebe2b4 package=libxml2-2.15.3-h49c6c72_1
-https://conda.anaconda.org/conda-forge/linux-64/libxml2-2.15.3-h49c6c72_1.conda#a16a576a5844a3a0e1cdfc5e162b9fe9c64dccf6a93f44c293bb42851aebe2b4
-# sha256=b01812eff4e950a73933cb3dc14647a97ee377c7fab4858495b80a749ebfbf8b package=sqlite-3.53.4-h9ffa6c4_1
-https://conda.anaconda.org/conda-forge/linux-64/sqlite-3.53.4-h9ffa6c4_1.conda#b01812eff4e950a73933cb3dc14647a97ee377c7fab4858495b80a749ebfbf8b
-# sha256=ceb9c724de53ee3560f121dbfcb00fe8acb22c08691158fce7b6c32425855626 package=python-3.12.14-h8ab3286_0_cpython
+# sha256=b928c30ddcb0e3f544c6eade8352737e6e610e263276b90232db6a578ef899d8 package=tzdata-2026c-h151e31d_0.conda
+https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda#b928c30ddcb0e3f544c6eade8352737e6e610e263276b90232db6a578ef899d8
+# sha256=80677180dd3c22deb7426ca89d6203f1c7f1f256f2d5a94dc210f6e758229809 package=python_abi-3.12-8_cp312.conda
+https://conda.anaconda.org/conda-forge/noarch/python_abi-3.12-8_cp312.conda#80677180dd3c22deb7426ca89d6203f1c7f1f256f2d5a94dc210f6e758229809
+# sha256=0a0544cf95f64394fe4959286f5c71f5444ad58feb0602e53becb27448d24da6 package=ca-certificates-2026.7.22-hbd8a1cb_0.conda
+https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.7.22-hbd8a1cb_0.conda#0a0544cf95f64394fe4959286f5c71f5444ad58feb0602e53becb27448d24da6
+# sha256=56d1c396c2cc46500685025496e6b04825b521ebea1f3a3bbf391dcf0d22bc7a package=chrono-10.0.0-py312h14c7f5c_0.conda
+https://conda.anaconda.org/conda-forge/linux-64/chrono-10.0.0-py312h14c7f5c_0.conda#56d1c396c2cc46500685025496e6b04825b521ebea1f3a3bbf391dcf0d22bc7a
+# sha256=4747b2d6a8336f52343bceb8a1ebf41a9e6e665b9d2e3f989972de53a310599e package=openssl-3.6.4-h781a0a9_0.conda
+https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.4-h781a0a9_0.conda#4747b2d6a8336f52343bceb8a1ebf41a9e6e665b9d2e3f989972de53a310599e
+# sha256=ceb9c724de53ee3560f121dbfcb00fe8acb22c08691158fce7b6c32425855626 package=python-3.12.14-h8ab3286_0_cpython.conda
 https://conda.anaconda.org/conda-forge/linux-64/python-3.12.14-h8ab3286_0_cpython.conda#ceb9c724de53ee3560f121dbfcb00fe8acb22c08691158fce7b6c32425855626
-# sha256=c49e992c1a2978f5a8cdf3cdf9aac0c0a444bbddb7316dbfbf16f5a94ff71c10 package=assimp-5.4.3-hecf2907_1
-https://conda.anaconda.org/conda-forge/linux-64/assimp-5.4.3-hecf2907_1.conda#c49e992c1a2978f5a8cdf3cdf9aac0c0a444bbddb7316dbfbf16f5a94ff71c10
-# sha256=0b6cc13e36cf19ae9b764740112fc591682e189c99353be9f72f3d96ccf29d79 package=libcurl-8.21.0-ha042cf0_5
-https://conda.anaconda.org/conda-forge/linux-64/libcurl-8.21.0-ha042cf0_5.conda#0b6cc13e36cf19ae9b764740112fc591682e189c99353be9f72f3d96ccf29d79
-# sha256=3503121a77d76e33f668916b69d4b20cb6a21f62aa4351d1506271ae9d184c61 package=libsndfile-1.2.2-hbc6d301_3
-https://conda.anaconda.org/conda-forge/linux-64/libsndfile-1.2.2-hbc6d301_3.conda#3503121a77d76e33f668916b69d4b20cb6a21f62aa4351d1506271ae9d184c61
-# sha256=3c7a4118c678c43952ea10183388f175a4bcee16a1c61d90dab2fbdafddc45d7 package=openjph-0.31.0-h8d634f6_0
-https://conda.anaconda.org/conda-forge/linux-64/openjph-0.31.0-h8d634f6_0.conda#3c7a4118c678c43952ea10183388f175a4bcee16a1c61d90dab2fbdafddc45d7
-# sha256=f6348ac9cebbc03f765ea6d2da88d57d19531585c8f3a963b98635b208e8bef1 package=libkml-1.3.0-haa4a5bd_1023
-https://conda.anaconda.org/conda-forge/linux-64/libkml-1.3.0-haa4a5bd_1023.conda#f6348ac9cebbc03f765ea6d2da88d57d19531585c8f3a963b98635b208e8bef1
-# sha256=c4c01b7dae74c5b48187c07b3e34521ebb1a8a72b5c9bcb9ca96471c4cae051e package=urdfdom-5.1.2-h8631160_0
-https://conda.anaconda.org/conda-forge/linux-64/urdfdom-5.1.2-h8631160_0.conda#c4c01b7dae74c5b48187c07b3e34521ebb1a8a72b5c9bcb9ca96471c4cae051e
-# sha256=868ba1b0b0ae15f7621ee960a459a74b9a17b69ba629c510a11bb37480e7b6df package=libcusolver-11.7.3.90-h9ab20c4_1
-https://conda.anaconda.org/conda-forge/linux-64/libcusolver-11.7.3.90-h9ab20c4_1.conda#868ba1b0b0ae15f7621ee960a459a74b9a17b69ba629c510a11bb37480e7b6df
-# sha256=45bb0eb92000a3f82555cc948013935aace8a1ea522b79700f58d3906c18e846 package=libfabric-2.6.0-ha770c72_0
-https://conda.anaconda.org/conda-forge/linux-64/libfabric-2.6.0-ha770c72_0.conda#45bb0eb92000a3f82555cc948013935aace8a1ea522b79700f58d3906c18e846
-# sha256=073f75becf0aade3d7a6606609630dd0fef1aa37a9a73a34c8c7ced6b75c5b2e package=ucc-1.8.0-h539fd1b_2
-https://conda.anaconda.org/conda-forge/linux-64/ucc-1.8.0-h539fd1b_2.conda#073f75becf0aade3d7a6606609630dd0fef1aa37a9a73a34c8c7ced6b75c5b2e
-# sha256=4c532a70ea9aeff2fa1aabaa4828ebc00c2ed12b22aa8ba19da5302b882fc82b package=libcblas-3.11.0-9_h0358290_openblas
-https://conda.anaconda.org/conda-forge/linux-64/libcblas-3.11.0-9_h0358290_openblas.conda#4c532a70ea9aeff2fa1aabaa4828ebc00c2ed12b22aa8ba19da5302b882fc82b
-# sha256=ea989e2dabd21d296a5a4ec515e695645aefcdf778ffdb5eeea515421d243ab5 package=liblapack-3.11.0-9_h47877c9_openblas
-https://conda.anaconda.org/conda-forge/linux-64/liblapack-3.11.0-9_h47877c9_openblas.conda#ea989e2dabd21d296a5a4ec515e695645aefcdf778ffdb5eeea515421d243ab5
-# sha256=832f538ade441b1eee863c8c91af9e69b356cd3e9e1350fff4fe36cc573fc91a package=xorg-libxcursor-1.2.3-hb9d3cd8_0
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxcursor-1.2.3-hb9d3cd8_0.conda#832f538ade441b1eee863c8c91af9e69b356cd3e9e1350fff4fe36cc573fc91a
-# sha256=43b9772fd6582bf401846642c4635c47a9b0e36ca08116b3ec3df36ab96e0ec0 package=xorg-libxdamage-1.1.6-hb9d3cd8_0
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxdamage-1.1.6-hb9d3cd8_0.conda#43b9772fd6582bf401846642c4635c47a9b0e36ca08116b3ec3df36ab96e0ec0
-# sha256=58e8fc1687534124832d22e102f098b5401173212ac69eb9fd96b16a3e2c8cb2 package=xorg-libxscrnsaver-1.2.4-hb9d3cd8_0
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxscrnsaver-1.2.4-hb9d3cd8_0.conda#58e8fc1687534124832d22e102f098b5401173212ac69eb9fd96b16a3e2c8cb2
-# sha256=05a7f25d7f7f5cd32b27a019233ece97167fd8ade255bc13a0e49e53387f4c30 package=xorg-libxrandr-1.5.5-h7cc23a3_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxrandr-1.5.5-h7cc23a3_1.conda#05a7f25d7f7f5cd32b27a019233ece97167fd8ade255bc13a0e49e53387f4c30
-# sha256=a523d71344a2f640efe6fc42b88fc261d9cd389d4f9838a5d42dcdb120c2b0c8 package=xorg-libxi-1.8.3-h7cc23a3_1
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.8.3-h7cc23a3_1.conda#a523d71344a2f640efe6fc42b88fc261d9cd389d4f9838a5d42dcdb120c2b0c8
-# sha256=3a9da41aac6dca9d3ff1b53ee18b9d314de88add76bafad9ca2287a494abcd86 package=xorg-libxinerama-1.1.6-hecca717_0
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxinerama-1.1.6-hecca717_0.conda#3a9da41aac6dca9d3ff1b53ee18b9d314de88add76bafad9ca2287a494abcd86
-# sha256=64db17baaf36fa03ed8fae105e2e671a7383e22df4077486646f7dbf12842c9f package=xorg-libxxf86vm-1.1.7-hb03c661_0
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxxf86vm-1.1.7-hb03c661_0.conda#64db17baaf36fa03ed8fae105e2e671a7383e22df4077486646f7dbf12842c9f
-# sha256=7b2e7e31e8a4f5a01c45ecadcd8aa68c8f733b035240bc7ba9881835ef4bf7b4 package=libgl-1.7.0-ha4b6fd6_5
-https://conda.anaconda.org/conda-forge/linux-64/libgl-1.7.0-ha4b6fd6_5.conda#7b2e7e31e8a4f5a01c45ecadcd8aa68c8f733b035240bc7ba9881835ef4bf7b4
-# sha256=443ff3b29df8eab5b075abed87e4edbf59ca5602f627a79bffe5b0855ea40ce9 package=libxml2-devel-2.15.3-h49c6c72_1
-https://conda.anaconda.org/conda-forge/linux-64/libxml2-devel-2.15.3-h49c6c72_1.conda#443ff3b29df8eab5b075abed87e4edbf59ca5602f627a79bffe5b0855ea40ce9
-# sha256=7d195433059d190ff634b6674af0e2873d5dcdbc0cfeb9f84f99619b5ac6efa8 package=collada-dom-2.5.0-hd82f57d_13
-https://conda.anaconda.org/conda-forge/linux-64/collada-dom-2.5.0-hd82f57d_13.conda#7d195433059d190ff634b6674af0e2873d5dcdbc0cfeb9f84f99619b5ac6efa8
-# sha256=bfae027a67d02325cd6b75edd60beb67cf24483af9df0ae9ef74d4438e41c806 package=libarchive-3.8.9-gpl_h3152399_101
-https://conda.anaconda.org/conda-forge/linux-64/libarchive-3.8.9-gpl_h3152399_101.conda#bfae027a67d02325cd6b75edd60beb67cf24483af9df0ae9ef74d4438e41c806
-# sha256=5041d295813dfb84652557839825880aae296222ab725972285c5abe3b6e4288 package=libhwloc-2.13.0-default_he001693_1000
-https://conda.anaconda.org/conda-forge/linux-64/libhwloc-2.13.0-default_he001693_1000.conda#5041d295813dfb84652557839825880aae296222ab725972285c5abe3b6e4288
-# sha256=d44878d396713ccf3b355df617f61c40a1442fffcf134392bc6ce0e6c2219369 package=libxkbcommon-1.13.2-h51789e4_1
-https://conda.anaconda.org/conda-forge/linux-64/libxkbcommon-1.13.2-h51789e4_1.conda#d44878d396713ccf3b355df617f61c40a1442fffcf134392bc6ce0e6c2219369
-# sha256=dff6f355025b9a510d9093e29fd970fa1091e758b848c9dec814d96ae63a09ba package=proj-9.8.1-he0df7b0_0
-https://conda.anaconda.org/conda-forge/linux-64/proj-9.8.1-he0df7b0_0.conda#dff6f355025b9a510d9093e29fd970fa1091e758b848c9dec814d96ae63a09ba
-# sha256=0a0858c59805d627d02bdceee965dd84fde0aceab03a2f984325eec08d822096 package=pulseaudio-client-17.0-h9a6aba3_3
-https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-h9a6aba3_3.conda#0a0858c59805d627d02bdceee965dd84fde0aceab03a2f984325eec08d822096
-# sha256=20eb5025e7dabe02bc89bbdb325ab74cf9193314676775288a392df2edec130d package=openexr-3.4.15-ha9edf89_0
-https://conda.anaconda.org/conda-forge/linux-64/openexr-3.4.15-ha9edf89_0.conda#20eb5025e7dabe02bc89bbdb325ab74cf9193314676775288a392df2edec130d
-# sha256=ad0105310dce329ad179b01cacdc8316a5605235ad65777bb88c5790db7e6a04 package=cuda-libraries-12.8.2-ha770c72_0
-https://conda.anaconda.org/conda-forge/linux-64/cuda-libraries-12.8.2-ha770c72_0.conda#ad0105310dce329ad179b01cacdc8316a5605235ad65777bb88c5790db7e6a04
-# sha256=a70c25b66321ee77f9892b205e3247263c400803f543dc8aca53d569a59c5a77 package=libvulkan-loader-1.4.357.0-h0e34353_2
-https://conda.anaconda.org/conda-forge/linux-64/libvulkan-loader-1.4.357.0-h0e34353_2.conda#a70c25b66321ee77f9892b205e3247263c400803f543dc8aca53d569a59c5a77
-# sha256=d66525e7b1c492aa179c6c55610fc8dfb0a9a62ea7d4fb9f904fa6af62127f61 package=xorg-libxtst-1.2.5-h7cc23a3_4
-https://conda.anaconda.org/conda-forge/linux-64/xorg-libxtst-1.2.5-h7cc23a3_4.conda#d66525e7b1c492aa179c6c55610fc8dfb0a9a62ea7d4fb9f904fa6af62127f61
-# sha256=f94040a0d7c449038811097e145f223bd3b2ab4c5181870c6e27e1b9dd777d48 package=freeglut-3.2.2-h215f996_4
-https://conda.anaconda.org/conda-forge/linux-64/freeglut-3.2.2-h215f996_4.conda#f94040a0d7c449038811097e145f223bd3b2ab4c5181870c6e27e1b9dd777d48
-# sha256=535d152ee06e3d3015a5ab410dfea9574e1678e226fa166f859a0b9e1153e597 package=glew-2.3.0-h71661d4_0
-https://conda.anaconda.org/conda-forge/linux-64/glew-2.3.0-h71661d4_0.conda#535d152ee06e3d3015a5ab410dfea9574e1678e226fa166f859a0b9e1153e597
-# sha256=2af3a2477246fa76c3f4f705e692220af11e81dedbfc43beb48c4d52b4269fbb package=openscenegraph-3.6.5-h9389e23_21
-https://conda.anaconda.org/conda-forge/linux-64/openscenegraph-3.6.5-h9389e23_21.conda#2af3a2477246fa76c3f4f705e692220af11e81dedbfc43beb48c4d52b4269fbb
-# sha256=2837759fb832ab8587622602531f8e4b5d5e5ec12ea9b3936be06f384b933800 package=libpmix-5.0.8-h31fc519_4
-https://conda.anaconda.org/conda-forge/linux-64/libpmix-5.0.8-h31fc519_4.conda#2837759fb832ab8587622602531f8e4b5d5e5ec12ea9b3936be06f384b933800
-# sha256=30cb9355c2fefc20ff1a3d6566b9714d5614086a2524c07721fc344eb20515ae package=tbb-2023.0.0-hab88423_2
-https://conda.anaconda.org/conda-forge/linux-64/tbb-2023.0.0-hab88423_2.conda#30cb9355c2fefc20ff1a3d6566b9714d5614086a2524c07721fc344eb20515ae
-# sha256=2f46b0709d5122b37d65a039ad66ff9c756c31341a83ba216a3049700921b2b4 package=glfw-3.5.1-hb03c661_0
-https://conda.anaconda.org/conda-forge/linux-64/glfw-3.5.1-hb03c661_0.conda#2f46b0709d5122b37d65a039ad66ff9c756c31341a83ba216a3049700921b2b4
-# sha256=1226948565ea9fa4fbaefc8c5ff6bb4c66e3cb96a9db71d236dcc0be0bc319cb package=libspatialite-5.1.0-gpl_hab3fe16_120
-https://conda.anaconda.org/conda-forge/linux-64/libspatialite-5.1.0-gpl_hab3fe16_120.conda#1226948565ea9fa4fbaefc8c5ff6bb4c66e3cb96a9db71d236dcc0be0bc319cb
-# sha256=10a5b0b158a5af40b228d6a10a29efb858953a207ff078ce42cf7f7b2138c0af package=vulkanscenegraph-1.1.11-h95c1ebc_0
-https://conda.anaconda.org/conda-forge/linux-64/vulkanscenegraph-1.1.11-h95c1ebc_0.conda#10a5b0b158a5af40b228d6a10a29efb858953a207ff078ce42cf7f7b2138c0af
-# sha256=b7f4a338074d0daa5086d6d7f319dd79b277c47a761abd8ebac72c0253f4c6ad package=sdl3-3.4.14-hdeec2a5_0
-https://conda.anaconda.org/conda-forge/linux-64/sdl3-3.4.14-hdeec2a5_0.conda#b7f4a338074d0daa5086d6d7f319dd79b277c47a761abd8ebac72c0253f4c6ad
-# sha256=20cafe96c3159bd328886552c45561dd52b6cdb844170c54189a1860a88d7997 package=openmpi-5.0.10-hee33aa4_2
-https://conda.anaconda.org/conda-forge/linux-64/openmpi-5.0.10-hee33aa4_2.conda#20cafe96c3159bd328886552c45561dd52b6cdb844170c54189a1860a88d7997
-# sha256=23e3c91020d58718c3f7e75629dee02722f29c94a1a86afc7afa6112d2c4a9fe package=mkl-2025.2.0-h0e700b2_629
-https://conda.anaconda.org/conda-forge/linux-64/mkl-2025.2.0-h0e700b2_629.conda#23e3c91020d58718c3f7e75629dee02722f29c94a1a86afc7afa6112d2c4a9fe
-# sha256=516eec194db83718aff80de8ebe7bab7473b8064ff9967c01b97de173ea8311d package=libgdal-core-3.11.5-h4f65170_7
-https://conda.anaconda.org/conda-forge/linux-64/libgdal-core-3.11.5-h4f65170_7.conda#516eec194db83718aff80de8ebe7bab7473b8064ff9967c01b97de173ea8311d
-# sha256=518e357c09cc89a711756ab1bc8a7504368aaa4eaf981b8a189331c7478b7c71 package=osg2vsg-0.3.0-hb700be7_0
-https://conda.anaconda.org/conda-forge/linux-64/osg2vsg-0.3.0-hb700be7_0.conda#518e357c09cc89a711756ab1bc8a7504368aaa4eaf981b8a189331c7478b7c71
-# sha256=987ad072939fdd51c92ea8d3544b286bb240aefda329f9b03a51d9b7e777f9de package=sdl2-2.32.56-h54a6638_0
-https://conda.anaconda.org/conda-forge/linux-64/sdl2-2.32.56-h54a6638_0.conda#987ad072939fdd51c92ea8d3544b286bb240aefda329f9b03a51d9b7e777f9de
-# sha256=6f2fbdcc53bd88f64ed649d13f52c64ebfa0b3b5d0887ccd5278420a9bc59c51 package=vsgxchange-1.1.7-h18e2fff_2
-https://conda.anaconda.org/conda-forge/linux-64/vsgxchange-1.1.7-h18e2fff_2.conda#6f2fbdcc53bd88f64ed649d13f52c64ebfa0b3b5d0887ccd5278420a9bc59c51
-# sha256=599abb58e89d34bf02628526cf7f47fd7e266dcd39163d2fc9669f19ac9e783b package=sdl-1.2.68-h9b8e6db_1
-https://conda.anaconda.org/conda-forge/linux-64/sdl-1.2.68-h9b8e6db_1.conda#599abb58e89d34bf02628526cf7f47fd7e266dcd39163d2fc9669f19ac9e783b
-# sha256=72aa5d6348eeed5b8f6df1c711757c31dab061c9a355a72cc18ea4c77527a475 package=irrlicht-1.8.5-hcce6d95_5
-https://conda.anaconda.org/conda-forge/linux-64/irrlicht-1.8.5-hcce6d95_5.conda#72aa5d6348eeed5b8f6df1c711757c31dab061c9a355a72cc18ea4c77527a475
-# sha256=c432626b16768b8dab228bfb706f7060c2d462a21c516d240f68f2f902b5a044 package=packaging-26.3-pyhc364b38_0
+# sha256=c432626b16768b8dab228bfb706f7060c2d462a21c516d240f68f2f902b5a044 package=packaging-26.3-pyhc364b38_0.conda
 https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda#c432626b16768b8dab228bfb706f7060c2d462a21c516d240f68f2f902b5a044
-# sha256=9e200ee5f9ff19a4d94e4b51c4856d53dec849f91032f345cf0c6bc3d51a7183 package=setuptools-84.0.0-pyh332efcf_0
+# sha256=9e200ee5f9ff19a4d94e4b51c4856d53dec849f91032f345cf0c6bc3d51a7183 package=setuptools-84.0.0-pyh332efcf_0.conda
 https://conda.anaconda.org/conda-forge/noarch/setuptools-84.0.0-pyh332efcf_0.conda#9e200ee5f9ff19a4d94e4b51c4856d53dec849f91032f345cf0c6bc3d51a7183
-# sha256=5437eb392784ce047add5bd70872c79fb0a309b4bb3cd844314656409edebfa8 package=cuda-runtime-12.8.2-ha804496_0
-https://conda.anaconda.org/conda-forge/noarch/cuda-runtime-12.8.2-ha804496_0.conda#5437eb392784ce047add5bd70872c79fb0a309b4bb3cd844314656409edebfa8
-# sha256=ba64b29b6d418024cb565081a1799262cb2780d2534ff4c14f76aa858c4286cd package=wheel-0.48.0-pyhd8ed1ab_0
+# sha256=ba64b29b6d418024cb565081a1799262cb2780d2534ff4c14f76aa858c4286cd package=wheel-0.48.0-pyhd8ed1ab_0.conda
 https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda#ba64b29b6d418024cb565081a1799262cb2780d2534ff4c14f76aa858c4286cd
-# sha256=c205bae42eb11b364fe3663a817cbcbc20a8ef544c6b2ff6f391013487117259 package=pip-26.2.1-pyh8b19718_0
+# sha256=c205bae42eb11b364fe3663a817cbcbc20a8ef544c6b2ff6f391013487117259 package=pip-26.2.1-pyh8b19718_0.conda
 https://conda.anaconda.org/conda-forge/noarch/pip-26.2.1-pyh8b19718_0.conda#c205bae42eb11b364fe3663a817cbcbc20a8ef544c6b2ff6f391013487117259
-# sha256=1235aaa0e265d7b0247fe6fb456a55f10f5fddf5349b652727fcdcdff4a26eb4 package=numpy-2.5.2-py312h33ff503_0
-https://conda.anaconda.org/conda-forge/linux-64/numpy-2.5.2-py312h33ff503_0.conda#1235aaa0e265d7b0247fe6fb456a55f10f5fddf5349b652727fcdcdff4a26eb4
-# sha256=87d7e06a15f660525714f1e368145a881ad9e0495dabfd821b105096450f841e package=pychrono-10.0.0-py312h98ab86c_677
-https://conda.anaconda.org/projectchrono/linux-64/pychrono-10.0.0-py312h98ab86c_677.conda#87d7e06a15f660525714f1e368145a881ad9e0495dabfd821b105096450f841e
+# sha256=c8b8d1d237c4e1f41cca0b37340351473d6652085546fa6ab365dce328f87b1c package=pychrono-10.0.0-py312h3a49c4c_0.conda
+https://conda.anaconda.org/conda-forge/linux-64/pychrono-10.0.0-py312h3a49c4c_0.conda#c8b8d1d237c4e1f41cca0b37340351473d6652085546fa6ab365dce328f87b1c

@@ -2,6 +2,16 @@
 
 ## Unreleased — release hardening
 
+- Replaced the native lock with a CPU-only conda-forge transaction pinned to the exact
+  Project Chrono and PyChrono builds. Build and CI gates reject CUDA, MKL, MPI, and
+  OpenGL/X11, VTK and Irrlicht package families.
+- Removed unused Chrono datasets, PyChrono demos, and Python bytecode caches after
+  verifying their paths and the pinned package metadata, then validated the native
+  import and required symbols on the pruned tree. The native container smoke remains the
+  qualification oracle for the resulting image.
+- Added candidate image-size, compressed image-export, layer-history, and SPDX SBOM
+  evidence before publication review. This evidence does not clear the image for
+  distribution.
 - Added the Linux/amd64 explicit Project Chrono transaction, frozen Deno dependency
   cache, authenticated container boundary, and native MCP smoke definition.
 - Added release provenance/SBOM configuration and a strict opt-in publication gate. JSR

@@ -99,9 +99,10 @@ HTTP process requires the framework's static token configuration `MCP_AUTH_TOKEN
 ## Docker and VPS deployment
 
 The Dockerfile is a linux/amd64 image. It pins the Deno and micromamba bases by digest,
-uses `deno.lock` with `--frozen`, and installs the complete SHA-256-pinned Conda
-transaction in `locks/pychrono-linux-64.explicit.txt`. Runtime uses cached Deno
-dependencies and the exact verified interpreter `/opt/conda/bin/python`.
+uses `deno.lock` with `--frozen`, and installs the CPU-only SHA-256-pinned Conda
+transaction in `locks/pychrono-linux-64.explicit.txt`. The lock excludes CUDA, MKL, MPI,
+OpenGL/X11, VTK and Irrlicht package families. Runtime uses cached Deno dependencies and
+the exact verified interpreter `/opt/conda/bin/python`.
 
 The container is intentionally network-facing only through an in-image bearer-token
 proxy. It refuses to start unless `MCP_BEARER_TOKEN` is non-empty; the Deno MCP process
@@ -114,7 +115,7 @@ secret and use a long random value. Health checks also require that bearer token
 
 Image status is deliberately literal: the image is **not license-cleared and not
 published**. The public source repository does not make the package or image available.
-`THIRD_PARTY_NOTICES.md`, the pinned Conda inventory and a future image SBOM identify
+`THIRD_PARTY_NOTICES.md`, the pinned Conda inventory and a candidate image SBOM identify
 the dependency boundary, but they are not legal clearance to distribute the image.
 
 ```sh
@@ -144,19 +145,25 @@ literal `NOT_CONVERGED` is a recorded `execution_state: "not_converged"` observa
 never a fabricated convergence result. Constraint violation components remain split as
 translation residual metres and quaternion-imaginary rotation residuals.
 
-Native qualification was deliberately run privately on 2026-08-27. The linux/amd64 probe
-image was `sha256:3bc07b0bf3bf40e0412141f5ffe1bfb4ae93d98dfeed09384211cf620640b381` at
-6,127,610,043 bytes. `scripts/docker-smoke.sh` proved the authenticated HTTP/MCP path:
-missing-bearer rejection, authenticated MCP calls, an off-axis one-joint π/2 pose and
-quaternion, finite residual components, exact request replay, and request-ID conflict.
-Separate native evidence on the current image established the non-zero initial-angle
-semantics: from the zero-angle child reference `[1,0,0]`, `initial_angle_rad: 0.5` and
-zero angular speed yield at `t=0` motor angle `0.5`, position `[cos(0.5),sin(0.5),0]`,
-and quaternion `[cos(0.25),0,0,sin(0.25)]`. The smoke definition now repeats that second
-zero-speed case, so future smoke runs enforce the same observed assembly rule. Separate
-VPS probes established that the child binds to loopback and that SIGTERM exits with
-status 0. This is private qualification of the named probe image only; it does not make
-a package or OCI image public, published, or license-cleared.
+Native qualification was deliberately run privately on 2026-08-27. The historical
+linux/amd64 probe image was
+`sha256:3bc07b0bf3bf40e0412141f5ffe1bfb4ae93d98dfeed09384211cf620640b381` at
+6,127,610,043 bytes. It predates the CPU-only lock and targeted data/demo pruning, so it
+is not a claimed size for a new candidate. `scripts/docker-smoke.sh` proved the
+authenticated HTTP/MCP path: missing-bearer rejection, authenticated MCP calls, an
+off-axis one-joint π/2 pose and quaternion, finite residual components, exact request
+replay, and request-ID conflict. Separate native evidence on that historical image
+established the non-zero initial-angle semantics: from the zero-angle child reference
+`[1,0,0]`, `initial_angle_rad: 0.5` and zero angular speed yield at `t=0` motor angle
+`0.5`, position `[cos(0.5),sin(0.5),0]`, and quaternion `[cos(0.25),0,0,sin(0.25)]`. The
+smoke definition now repeats that second zero-speed case, so future smoke runs enforce
+the same observed assembly rule. Separate VPS probes established that the child binds to
+loopback and that SIGTERM exits with status 0. The CPU-only candidate removes unused
+Chrono datasets and PyChrono demos, then validates the core import on the pruned tree;
+the worker does not call them. Native smoke remains the oracle for that pruned
+candidate, while demo/data paths and modules that depend on those assets are outside
+this provider's coverage. This is private qualification of the named probe image only;
+it does not make a package or OCI image public, published, or license-cleared.
 
 ## Development checks
 
@@ -169,17 +176,18 @@ deno publish --dry-run
 ```
 
 CI runs the source checks plus a linux/amd64 container build and authenticated one-joint
-native smoke. A release tag must exactly equal the package version, then pass the same
-plain gates. Publication is disabled by default: both JSR and GHCR publication run only
-when the repository Actions variable `CHRONO_RELEASE_ENABLED` is exactly `true`. Set
-that variable only after explicit artifact clearance; a tag by itself never publishes
-either artifact. JSR and GHCR are independent external transactions, so success of one
-does not make the pair atomic and a failure after JSR can leave a package without its
-image. On a future successful GHCR publish, the workflow requests a version tag, an
-immutable commit-SHA tag, and BuildKit SBOM/provenance attestations; it never requests
-`latest`. No public package, image, or release tag has been published. The private
-loopback probe is the only deployment; it does not make any artifact public or
-license-cleared.
+native smoke. Each candidate emits its image ID, exact Docker image size, a `gzip -n`
+compressed `docker save` byte size, layer history, and a pre-publication SPDX SBOM for
+review. A release tag must exactly equal the package version, then pass the same plain
+gates. Publication is disabled by default: both JSR and GHCR publication run only when
+the repository Actions variable `CHRONO_RELEASE_ENABLED` is exactly `true`. Set that
+variable only after explicit artifact clearance; a tag by itself never publishes either
+artifact. JSR and GHCR are independent external transactions, so success of one does not
+make the pair atomic and a failure after JSR can leave a package without its image. On a
+future successful GHCR publish, the workflow requests a version tag, an immutable
+commit-SHA tag, and BuildKit SBOM/provenance attestations; it never requests `latest`.
+No public package, image, or release tag has been published. The private loopback probe
+is the only deployment; it does not make any artifact public or license-cleared.
 
 ## License
 

@@ -26,8 +26,30 @@ jobs:
       - run: deno task lint
       - run: deno task test
       - run: deno publish --dry-run
+      - name: Verify CPU-only lock boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'package=(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|libegl|libopengl|opengl|xorg-|font-|fonts-|qt|vtk|irrlicht)' locks/pychrono-linux-64.explicit.txt
       - run: docker build --platform linux/amd64 --tag mcp-chrono:release-verify .
       - run: ./scripts/docker-smoke.sh mcp-chrono:release-verify
+      - name: Record release-verify container evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker image inspect --format 'image_id={{.Id}}' mcp-chrono:release-verify
+          docker image inspect --format 'docker_size_bytes={{.Size}}' mcp-chrono:release-verify
+          docker image save mcp-chrono:release-verify | gzip -n | wc -c | awk '{print "docker_save_gzip_bytes=" $1}'
+          docker history --no-trunc mcp-chrono:release-verify
+      - name: Generate release-verify SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: mcp-chrono:release-verify
+          format: spdx-json
+          output-file: mcp-chrono-release-verify.spdx.json
+          artifact-name: mcp-chrono-release-verify-sbom
+          upload-artifact: true
+          upload-release-assets: false
   publish:
     needs: verify
     if: vars.CHRONO_RELEASE_ENABLED == 'true'

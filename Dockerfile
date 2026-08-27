@@ -25,8 +25,14 @@ COPY deno.json deno.lock mod.ts server.ts LICENSE THIRD_PARTY_NOTICES.md ./
 COPY locks ./locks
 COPY src ./src
 COPY scripts ./scripts
-RUN micromamba install --yes --name base --file /app/locks/pychrono-linux-64.explicit.txt \
- && "$CHRONO_PYTHON" -c 'import json; import pychrono.core as chrono; metadata = json.load(open("/opt/conda/conda-meta/pychrono-10.0.0-py312h98ab86c_677.json", encoding="utf-8")); assert metadata["name"] == "pychrono"; assert metadata["version"] == "10.0.0"; assert metadata["build"] == "py312h98ab86c_677"; assert all(hasattr(chrono, name) for name in ("ChSystemNSC", "ChLinkMotorRotationAngle", "ChFunctionRamp", "ChFramed", "VNULL")); motor = chrono.ChLinkMotorRotationAngle(); assert all(hasattr(motor, name) for name in ("Initialize", "SetAngleFunction", "GetMotorAngle", "GetConstraintViolation"))' \
+RUN ! grep -E 'package=(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|libegl|libopengl|opengl|xorg-|font-|fonts-|qt|vtk|irrlicht)' /app/locks/pychrono-linux-64.explicit.txt \
+ && micromamba install --yes --name base --file /app/locks/pychrono-linux-64.explicit.txt \
+ && "$CHRONO_PYTHON" -c 'import json; pychrono_metadata = json.load(open("/opt/conda/conda-meta/pychrono-10.0.0-py312h3a49c4c_0.json", encoding="utf-8")); chrono_metadata = json.load(open("/opt/conda/conda-meta/chrono-10.0.0-py312h14c7f5c_0.json", encoding="utf-8")); assert pychrono_metadata["name"] == "pychrono"; assert pychrono_metadata["version"] == "10.0.0"; assert pychrono_metadata["build"] == "py312h3a49c4c_0"; assert chrono_metadata["name"] == "chrono"; assert chrono_metadata["version"] == "10.0.0"; assert chrono_metadata["build"] == "py312h14c7f5c_0"' \
+ && test -d /opt/conda/share/chrono/data \
+ && test -d /opt/conda/lib/python3.12/site-packages/pychrono/demos \
+ && rm -rf /opt/conda/share/chrono/data /opt/conda/lib/python3.12/site-packages/pychrono/demos \
+ && find /opt/conda -type d -name __pycache__ -prune -exec rm -rf {} + \
+ && "$CHRONO_PYTHON" -c 'from pathlib import Path; import pychrono.core as chrono; removed = (Path("/opt/conda/share/chrono/data"), Path("/opt/conda/lib/python3.12/site-packages/pychrono/demos")); assert all(not path.exists() for path in removed); assert not any(Path("/opt/conda").rglob("__pycache__")); assert all(hasattr(chrono, name) for name in ("ChSystemNSC", "ChLinkMotorRotationAngle", "ChFunctionRamp", "ChFramed", "VNULL")); motor = chrono.ChLinkMotorRotationAngle(); assert all(hasattr(motor, name) for name in ("Initialize", "SetAngleFunction", "GetMotorAngle", "GetConstraintViolation"))' \
  && deno cache --frozen --node-modules-dir=none server.ts \
  && micromamba clean --all --yes \
  && mkdir -p /data /opt/deno \
