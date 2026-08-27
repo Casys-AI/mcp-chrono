@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — pending publication
+## 0.1.0 — 2026-08-27
 
 - Replaced the native lock with a CPU-only conda-forge transaction pinned to the exact
   Project Chrono and PyChrono builds. Build and CI gates reject CUDA, MKL, MPI, and
@@ -13,9 +13,8 @@
   notice bundle, then removed the extracted Conda package cache. Added final-image
   notice gates for the Conda, Ubuntu and npm runtime boundaries.
 - Added candidate image-size, compressed image-export, layer-history, and SPDX SBOM
-  evidence before publication review. The SBOM gate explicitly requires the pinned
-  Chrono/PyChrono components and rejects the excluded package families. This evidence
-  does not clear the image for distribution.
+  evidence. The SBOM gate explicitly requires the pinned Chrono/PyChrono components and
+  rejects the excluded package families.
 - Added the Linux/amd64 explicit Project Chrono transaction, frozen Deno dependency
   cache, authenticated container boundary, and native MCP smoke definition.
 - Added release provenance/SBOM configuration and separate strict opt-in publication
@@ -31,9 +30,12 @@
   sample follows assembly with `initial_angle_rad` applied and may differ.
 - Extended the authenticated Docker smoke definition with a zero-speed `0.5` rad
   initial-angle reference case that asserts the assembled `t=0` pose and quaternion.
-- Prepared the Linux/amd64 GHCR publication with immutable version and commit tags,
-  BuildKit SBOM/provenance attestations and no `latest` tag. The JSR package is
-  registered separately and has no published version in this candidate.
+- Published the public Linux/amd64 image with immutable version and commit tags,
+  BuildKit SBOM/provenance attestations and no `latest` tag. Anonymous digest
+  inspection, pull and native smoke passed. The JSR package is registered separately and
+  remains unpublished.
+- Deployed the public digest to the private VPS on loopback while preserving the
+  existing data volume, bearer boundary and private rollback image.
 - Initial bounded provider for explicit Project Chrono prescribed rigid-body kinematics,
   with content-addressed cases, an immutable request ledger, and HTTP and stdio
   transports.

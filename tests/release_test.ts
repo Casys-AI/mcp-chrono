@@ -141,6 +141,10 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const dockerSmoke = await text("scripts/docker-smoke.sh");
   const manifest = await text("src/tools/register.ts");
   const readme = await text("README.md");
+  const compose = await text("deploy/compose.yaml");
+  const envExample = await text("deploy/.env.example");
+  const publicImage =
+    "ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da";
   assert(release.includes("refs/tags/v"));
   assert(!release.includes(":latest"));
   assert(release.includes('test "$GITHUB_REF_NAME" = "v$version"'));
@@ -222,6 +226,10 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(readme.includes("CHRONO_GHCR_RELEASE_ENABLED"));
   assert(readme.includes("CHRONO_JSR_RELEASE_ENABLED"));
   assert(readme.replaceAll(/\s+/g, " ").includes("explicitly authorized"));
+  assert(readme.includes(publicImage));
+  assert(compose.includes(publicImage));
+  assert(envExample.includes(publicImage));
+  assert(!readme.includes("GHCR publication is still pending"));
   assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
   assert(dockerSmoke.includes('"initial_angle_rad": 0.5'));
   assert(dockerSmoke.includes("[math.cos(0.5), math.sin(0.5), 0]"));

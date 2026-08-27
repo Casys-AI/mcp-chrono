@@ -1,10 +1,16 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. Version **0.1.0** is the current release
-candidate for a public Linux/amd64 image at `ghcr.io/casys-ai/mcp-chrono:0.1.0`. At this
-commit, GHCR publication is still pending. The JSR package is registered to this
-repository but does not yet carry a published version.
+kinematics using Project Chrono 10.0.0. Version **0.1.0** is published as a public
+Linux/amd64 image at `ghcr.io/casys-ai/mcp-chrono:0.1.0`. Production deployments should
+pin the immutable release digest:
+
+```text
+ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da
+```
+
+The JSR package is registered to this repository but does not yet carry a published
+version.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -70,12 +76,11 @@ properties throughout.
 
 ## Quick start
 
-Once the GHCR release is marked public above, the container is the recommended runtime
-path. Create a long random bearer token, keep the service on host loopback, and preserve
-`/data`:
+The public container is the recommended runtime path. Create a long random bearer token,
+keep the service on host loopback, and preserve `/data`:
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono:0.1.0
+docker pull ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -83,7 +88,7 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono:0.1.0
+  ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da
 ```
 
 The MCP endpoint is `http://127.0.0.1:3025/mcp`. Requests must carry the same value as
@@ -152,15 +157,15 @@ deployment secret store. Preserve and back up the `/data` volume: it contains th
 content-addressed cases and request ledger used for idempotency and uncertain-state
 recovery.
 
-`deploy/compose.yaml` is the release operator manifest. After GHCR publication, it
-defaults to the `0.1.0` tag, keeps `/data` in the named `chrono-data` volume, binds only
+`deploy/compose.yaml` is the release operator manifest. It defaults to the immutable
+`0.1.0` digest, keeps `/data` in the named `chrono-data` volume, binds only
 `127.0.0.1:3025:3025`, drops capabilities and runs without privilege escalation:
 
 ```sh
 cd deploy
 cp .env.example .env
 chmod 600 .env
-# Replace the token and, for production, CHRONO_IMAGE with the published @sha256 digest.
+# Replace the token. Change CHRONO_IMAGE only for an explicit upgrade or rollback.
 docker compose pull
 docker compose up -d
 docker compose ps
@@ -196,18 +201,32 @@ smoke definition now repeats that second zero-speed case, so future smoke runs e
 the same observed assembly rule. Separate VPS probes established that the child binds to
 loopback and that SIGTERM exits with status 0.
 
-The CPU-only private VPS probe now runs source commit
+The last CPU-only private VPS probe used source commit
 `05c0ba9b580a76d6bdb00f609dddc38a03c18e7b` as local Docker image ID
 `sha256:fb3af9519ff60c1911221c2a3286a112eb7aeae6cd9c089f042d9a9275d62d3d` at
 1,834,210,654 bytes, 70.1% below the historical image. Its `gzip -n` compressed Docker
 export is 800,315,938 bytes. It passed the isolated native smoke and a live
-authenticated manifest probe; the historical image ID is retained privately as the
-rollback target. The CPU-only image removes unused Chrono datasets and PyChrono demos,
-then validates the core import on the pruned tree; the worker does not call them. Native
+authenticated manifest probe; that probe image is retained privately as the rollback
+target. The CPU-only image removes unused Chrono datasets and PyChrono demos, then
+validates the core import on the pruned tree; the worker does not call them. Native
 smoke remains the oracle for that pruned image, while demo/data paths and modules that
 depend on those assets are outside this provider's coverage. This is private
 qualification of the named probe image only; it does not make a package or OCI image
 public, published, or license-cleared.
+
+The public `0.1.0` OCI index is
+`sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da`; its
+Linux/amd64 runtime manifest is
+`sha256:254927f8581e35f8fcc4e83f1fa92ec218e3c0d21e54dc0436651704bae6b7d6` and its
+separate attestation manifest carries the BuildKit SBOM and provenance. The runtime
+manifest contains 189,700,742 bytes of compressed layer and config content and expands
+to 532,379,194 bytes under Docker on the VPS. The release-verify Docker export
+compressed with `gzip -n` is 186,018,191 bytes. An empty Docker credential directory
+successfully inspected and pulled the public digest; that downloaded artifact then
+passed the native authenticated smoke and final-image notice verification. The private
+VPS now runs this exact public digest on loopback with the existing `chrono-data`
+volume; its authenticated manifest reports `@casys/mcp-chrono` version `0.1.0`, while an
+unauthenticated health request remains `401`.
 
 ## Development checks
 
