@@ -1,10 +1,10 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. Its current state is literal: the source
-repository is public with GitHub private vulnerability reporting active, while **0.1.0
-is prepared only**. A private VPS probe was deployed on 2026-08-27 with loopback-only
-exposure; the JSR package, GHCR image, and release tag are not published.
+kinematics using Project Chrono 10.0.0. Version **0.1.0** is the current release
+candidate for a public Linux/amd64 image at `ghcr.io/casys-ai/mcp-chrono:0.1.0`. At this
+commit, GHCR publication is still pending. The JSR package is registered to this
+repository but does not yet carry a published version.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -70,9 +70,32 @@ properties throughout.
 
 ## Quick start
 
-Prerequisites for native execution are Python with **exactly** `pychrono` / Project
-Chrono 10.0.0. Normal tests use an injected fake runner and do not assert native
-execution.
+Once the GHCR release is marked public above, the container is the recommended runtime
+path. Create a long random bearer token, keep the service on host loopback, and preserve
+`/data`:
+
+```sh
+docker pull ghcr.io/casys-ai/mcp-chrono:0.1.0
+docker volume create chrono-data
+chrono_token="$(openssl rand -hex 32)"
+docker run --rm \
+  -e MCP_BEARER_TOKEN="$chrono_token" \
+  -p 127.0.0.1:3025:3025 \
+  -v chrono-data:/data \
+  --cap-drop=ALL --security-opt no-new-privileges:true \
+  ghcr.io/casys-ai/mcp-chrono:0.1.0
+```
+
+The MCP endpoint is `http://127.0.0.1:3025/mcp`. Requests must carry the same value as
+`Authorization: Bearer <token>`. For a durable deployment, store the token in a
+root-readable secret file rather than shell history and pin the published image digest,
+as shown below.
+
+### Run from source
+
+Source execution is primarily for contributors and audits. It requires Python with
+**exactly** `pychrono` / Project Chrono 10.0.0. Normal tests use an injected fake runner
+and do not assert native execution.
 
 ```sh
 deno task check
@@ -113,15 +136,15 @@ token validation beyond that configured static secret. This is deliberately sepa
 from the native non-loopback static-token configuration above. Treat the token as a
 secret and use a long random value. Health checks also require that bearer token.
 
-Image status is deliberately literal: the image is **not license-cleared and not
-published**. The public source repository does not make the package or image available.
-`THIRD_PARTY_NOTICES.md`, the pinned Conda inventory and a candidate image SBOM identify
-the dependency boundary, but they are not legal clearance to distribute the image.
+The release image retains a versioned direct-notice bundle, the exact Conda recipes and
+licence files, Ubuntu copyright files and cached npm notices. CI verifies those paths in
+the final image. `THIRD_PARTY_NOTICES.md`, the image SBOM and BuildKit provenance record
+the distribution boundary; the aggregate OCI licence remains `NOASSERTION` and must not
+be described as MIT-only.
 
 ```sh
 docker build --platform linux/amd64 -t mcp-chrono:local .
-docker run --rm -e MCP_BEARER_TOKEN="$(openssl rand -hex 32)" \
-  -p 127.0.0.1:3025:3025 -v chrono-data:/data mcp-chrono:local
+./scripts/docker-smoke.sh mcp-chrono:local
 ```
 
 For a VPS, terminate TLS outside the container and protect the bearer token in the
@@ -129,11 +152,24 @@ deployment secret store. Preserve and back up the `/data` volume: it contains th
 content-addressed cases and request ledger used for idempotency and uncertain-state
 recovery.
 
-`deploy/compose.yaml` is a minimal operator manifest for an already loaded private probe
-image named `mcp-chrono:probe-20260827`. It reads `deploy/.env`, keeps `/data` in the
-named `chrono-data` volume, binds only `127.0.0.1:3025:3025`, and runs without privilege
-escalation. It does not build, pull, publish, or make an image available. Its
-environment file must supply a non-empty `MCP_BEARER_TOKEN` and must not be committed.
+`deploy/compose.yaml` is the release operator manifest. After GHCR publication, it
+defaults to the `0.1.0` tag, keeps `/data` in the named `chrono-data` volume, binds only
+`127.0.0.1:3025:3025`, drops capabilities and runs without privilege escalation:
+
+```sh
+cd deploy
+cp .env.example .env
+chmod 600 .env
+# Replace the token and, for production, CHRONO_IMAGE with the published @sha256 digest.
+docker compose pull
+docker compose up -d
+docker compose ps
+```
+
+Back up `chrono-data` before an upgrade. Record the active digest, change only
+`CHRONO_IMAGE`, then run `docker compose pull && docker compose up -d`. Rollback means
+restoring the previous digest and running `up -d` again. Do not use `down -v`: that
+deletes the content-addressed cases and request ledger.
 
 ## Native adapter notes
 
@@ -183,21 +219,23 @@ deno task test
 deno publish --dry-run
 ```
 
-CI runs the source checks plus a linux/amd64 container build and authenticated one-joint
-native smoke. Each candidate emits its image ID, exact Docker image size, a `gzip -n`
-compressed `docker save` byte size, layer history, and a pre-publication SPDX SBOM for
-review. CI explicitly enables Syft's Conda metadata cataloger and fails unless that SBOM
-contains the pinned Chrono and PyChrono versions without the excluded package families.
-A release tag must exactly equal the package version, then pass the same plain gates.
-Publication is disabled by default: both JSR and GHCR publication run only when the
-repository Actions variable `CHRONO_RELEASE_ENABLED` is exactly `true`. Set that
-variable only after explicit artifact clearance; a tag by itself never publishes either
-artifact. JSR and GHCR are independent external transactions, so success of one does not
-make the pair atomic and a failure after JSR can leave a package without its image. On a
-future successful GHCR publish, the workflow requests a version tag, an immutable
-commit-SHA tag, and BuildKit SBOM/provenance attestations; it never requests `latest`.
-No public package, image, or release tag has been published. The private loopback probe
-is the only deployment; it does not make any artifact public or license-cleared.
+CI runs the source checks plus a Linux/amd64 container build and authenticated native
+smoke. Each candidate emits its image ID, exact Docker image size, a `gzip -n`
+compressed `docker save` byte size, layer history, a final-image notice check and an
+SPDX SBOM. CI explicitly enables Syft's Conda metadata cataloger and fails unless the
+SBOM contains the pinned Chrono and PyChrono versions without the excluded package
+families.
+
+A release tag must exactly equal the package version and pass the same gates. GHCR and
+JSR are deliberately separate external transactions:
+
+- `CHRONO_GHCR_RELEASE_ENABLED=true` enables only the version and immutable commit-SHA
+  GHCR tags with BuildKit SBOM/provenance attestations;
+- `CHRONO_JSR_RELEASE_ENABLED=true` enables only `deno publish`.
+
+The GHCR path never publishes `latest`, and it refuses to overwrite an existing version
+or commit tag. Keep either variable disabled until that exact artifact is explicitly
+authorized.
 
 ## License
 

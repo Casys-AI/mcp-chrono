@@ -79,8 +79,8 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     >;
     assertEquals(manifestContent.ok, true);
     assertEquals(
-      (manifestContent.manifest as Record<string, unknown>).release_status,
-      "0.1.0 prepared; JSR package and GHCR image unpublished",
+      (manifestContent.manifest as Record<string, unknown>).version,
+      "0.1.0",
     );
     assertEquals(
       (manifestContent.manifest as Record<string, unknown>).input_pose_semantics,

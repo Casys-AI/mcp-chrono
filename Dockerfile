@@ -21,7 +21,7 @@ ENV MAMBA_ROOT_PREFIX=/opt/conda \
     CHRONO_INTERNAL_PORT=3026
 COPY --from=deno /deno /usr/local/bin/deno
 WORKDIR /app
-COPY deno.json deno.lock mod.ts server.ts LICENSE THIRD_PARTY_NOTICES.md ./
+COPY deno.json deno.lock mod.ts server.ts ./
 COPY locks ./locks
 COPY src ./src
 COPY scripts ./scripts
@@ -32,11 +32,17 @@ RUN ! grep -E 'package=(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|l
  && test -d /opt/conda/lib/python3.12/site-packages/pychrono/demos \
  && rm -rf /opt/conda/share/chrono/data /opt/conda/lib/python3.12/site-packages/pychrono/demos \
  && find /opt/conda -type d -name __pycache__ -prune -exec rm -rf {} + \
- && "$CHRONO_PYTHON" -c 'from pathlib import Path; import pychrono.core as chrono; removed = (Path("/opt/conda/share/chrono/data"), Path("/opt/conda/lib/python3.12/site-packages/pychrono/demos")); assert all(not path.exists() for path in removed); assert not any(Path("/opt/conda").rglob("__pycache__")); assert all(hasattr(chrono, name) for name in ("ChSystemNSC", "ChLinkMotorRotationAngle", "ChFunctionRamp", "ChFramed", "VNULL")); motor = chrono.ChLinkMotorRotationAngle(); assert all(hasattr(motor, name) for name in ("Initialize", "SetAngleFunction", "GetMotorAngle", "GetConstraintViolation"))' \
+ && "$CHRONO_PYTHON" /app/scripts/collect_conda_notices.py \
+ && rm -rf /opt/conda/pkgs \
+ && ! test -e /opt/conda/pkgs \
+ && "$CHRONO_PYTHON" -c 'from pathlib import Path; import pychrono.core as chrono; import json; removed = (Path("/opt/conda/share/chrono/data"), Path("/opt/conda/lib/python3.12/site-packages/pychrono/demos")); conda_meta = Path("/opt/conda/conda-meta"); bundle = Path("/opt/conda/share/mcp-chrono/conda-notices"); manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8")); assert all(not path.exists() for path in removed); assert not any(Path("/opt/conda").rglob("__pycache__")); assert (conda_meta / "chrono-10.0.0-py312h14c7f5c_0.json").is_file(); assert (conda_meta / "pychrono-10.0.0-py312h3a49c4c_0.json").is_file(); assert manifest["schema"] == "conda-notice-bundle/1.0"; assert manifest["packages"]; assert any(path.endswith("/info/index.json") for package in manifest["packages"] for path in package["files"]); assert all(hasattr(chrono, name) for name in ("ChSystemNSC", "ChLinkMotorRotationAngle", "ChFunctionRamp", "ChFramed", "VNULL")); motor = chrono.ChLinkMotorRotationAngle(); assert all(hasattr(motor, name) for name in ("Initialize", "SetAngleFunction", "GetMotorAngle", "GetConstraintViolation"))' \
  && deno cache --frozen --node-modules-dir=none server.ts \
- && micromamba clean --all --yes \
  && mkdir -p /data /opt/deno \
  && chown -R mambauser:mambauser /app /data /opt/deno
+
+COPY LICENSE THIRD_PARTY_NOTICES.md ./
+COPY LICENSES /usr/share/licenses/mcp-chrono
+RUN "$CHRONO_PYTHON" /app/scripts/verify_image_notices.py
 
 USER mambauser
 VOLUME ["/data"]

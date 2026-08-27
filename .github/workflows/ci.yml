@@ -27,6 +27,8 @@ jobs:
           ! grep -E 'package=(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|libegl|libopengl|opengl|xorg-|font-|fonts-|qt|vtk|irrlicht)' locks/pychrono-linux-64.explicit.txt
       - run: docker build --platform linux/amd64 --tag mcp-chrono:ci .
       - run: ./scripts/docker-smoke.sh mcp-chrono:ci
+      - name: Verify final image notice boundary
+        run: docker run --rm --entrypoint python mcp-chrono:ci /app/scripts/verify_image_notices.py
       - name: Record container candidate evidence
         shell: bash
         run: |

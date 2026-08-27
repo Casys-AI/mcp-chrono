@@ -1,8 +1,8 @@
 services:
   chrono:
-    image: mcp-chrono:probe-20260827
-    env_file:
-      - .env
+    image: ${CHRONO_IMAGE:-ghcr.io/casys-ai/mcp-chrono:0.1.0}
+    environment:
+      MCP_BEARER_TOKEN: ${MCP_BEARER_TOKEN:?Set MCP_BEARER_TOKEN in deploy/.env}
     ports:
       - "127.0.0.1:3025:3025"
     volumes:

@@ -61,6 +61,20 @@ Deno.test("release pins and package version stay explicit", async () => {
       "/opt/conda/lib/python3.12/site-packages/pychrono/demos",
     ),
   );
+  assert(
+    dockerfile.includes(
+      "COPY LICENSES /usr/share/licenses/mcp-chrono",
+    ),
+  );
+  assert(dockerfile.includes("/app/scripts/collect_conda_notices.py"));
+  assert(dockerfile.includes("/app/scripts/verify_image_notices.py"));
+  assert(dockerfile.includes("rm -rf /opt/conda/pkgs"));
+  assert(dockerfile.includes("! test -e /opt/conda/pkgs"));
+  assert(
+    dockerfile.indexOf("rm -rf /opt/conda/pkgs") <
+      dockerfile.indexOf("import pychrono.core as chrono"),
+  );
+  assert(!dockerfile.includes("micromamba clean --all --yes"));
   assert(dockerfile.includes('Path("/opt/conda").rglob("__pycache__")'));
   const lock = await text("locks/pychrono-linux-64.explicit.txt");
   assert(lock.includes("@EXPLICIT"));
@@ -149,16 +163,35 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
     assert(workflow.includes("upload-release-assets: false"));
     assert(workflow.includes('.name == "chrono"'));
     assert(workflow.includes('.name == "pychrono"'));
+    assert(workflow.includes("Verify final image notice boundary"));
+    assert(workflow.includes("/app/scripts/verify_image_notices.py"));
   }
   assert(ci.includes("image: mcp-chrono:ci"));
   assert(release.includes("image: mcp-chrono:release-verify"));
-  const publishJob = release.slice(release.indexOf("  publish:"));
+  const jsrStart = release.indexOf("  publish-jsr:");
+  const ghcrStart = release.indexOf("  publish-ghcr:");
+  assert(jsrStart > 0);
+  assert(ghcrStart > jsrStart);
+  const jsrJob = release.slice(jsrStart, ghcrStart);
+  const ghcrJob = release.slice(ghcrStart);
   assert(
-    publishJob.includes("if: vars.CHRONO_RELEASE_ENABLED == 'true'"),
+    jsrJob.includes("if: vars.CHRONO_JSR_RELEASE_ENABLED == 'true'"),
   );
-  assert(publishJob.includes("deno publish"));
-  assert(publishJob.includes("docker/login-action"));
-  assert(publishJob.includes("push: true"));
+  assert(jsrJob.includes("deno publish"));
+  assert(!jsrJob.includes("docker/login-action"));
+  assert(
+    ghcrJob.includes("if: vars.CHRONO_GHCR_RELEASE_ENABLED == 'true'"),
+  );
+  assert(!ghcrJob.includes("deno publish"));
+  assert(ghcrJob.includes("docker/login-action"));
+  assert(ghcrJob.includes("push: true"));
+  assert(release.includes("REGISTRY_IMAGE: ghcr.io/casys-ai/mcp-chrono"));
+  assert(
+    ghcrJob.includes("${{ env.REGISTRY_IMAGE }}:${{ needs.verify.outputs.version }}"),
+  );
+  assert(!ghcrJob.includes("ghcr.io/${{ github.repository }}"));
+  assert(ghcrJob.includes("Refuse to overwrite immutable GHCR tags"));
+  assert(!release.includes("CHRONO_RELEASE_ENABLED"));
   assert(!release.includes("--allow-slow-types"));
   assert(!deno.includes("--allow-slow-types"));
   assert(deno.includes("container_entrypoint_test.py"));
@@ -180,13 +213,10 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
     assert(gitignore.includes(pattern), `missing Git ignore ${pattern}`);
   }
   assert(gitignore.includes("!**/.env.example"));
-  assert(
-    manifest.includes(
-      "0.1.0 prepared; JSR package and GHCR image unpublished",
-    ),
-  );
-  assert(readme.includes("CHRONO_RELEASE_ENABLED"));
-  assert(readme.includes("explicit artifact clearance"));
+  assert(!manifest.includes("release_status"));
+  assert(readme.includes("CHRONO_GHCR_RELEASE_ENABLED"));
+  assert(readme.includes("CHRONO_JSR_RELEASE_ENABLED"));
+  assert(readme.replaceAll(/\s+/g, " ").includes("explicitly authorized"));
   assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
   assert(dockerSmoke.includes('"initial_angle_rad": 0.5'));
   assert(dockerSmoke.includes("[math.cos(0.5), math.sin(0.5), 0]"));

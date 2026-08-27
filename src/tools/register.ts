@@ -50,7 +50,6 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
         manifest: {
           name: "@casys/mcp-chrono",
           version: PROVIDER_VERSION,
-          release_status: "0.1.0 prepared; JSR package and GHCR image unpublished",
           case_schema_id: "chrono-prescribed-kinematics-case/1.0",
           input_pose_semantics:
             "absolute_com_pose and absolute_joint_frame are absolute zero-angle references; t=0 is observed after assembly applies initial_angle_rad and may differ.",

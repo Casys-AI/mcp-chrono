@@ -1,4 +1,4 @@
-# Third-party notices and inventory boundary
+# Third-party notices and runtime inventory boundary
 
 This repository's source is MIT-licensed under [LICENSE](LICENSE). The OCI image is an
 aggregate distribution and must not be described as MIT-only.
@@ -14,10 +14,25 @@ The image contains these directly selected components:
   archive URL is SHA-256 pinned; CUDA, MKL, MPI, OpenGL/X11, VTK and Irrlicht package
   families are excluded by the lock and CI gate.
 
-The lock is an inventory and integrity record, not a substitute for upstream license
-texts, source-offer, relinking, or notice obligations. Candidate CI and release-verify
-builds generate an SPDX SBOM with the Conda metadata cataloger explicitly enabled and
-gated on the pinned Chrono/PyChrono components. Maintainers must review that SBOM and
-the final image before publication, then review generated provenance if the image is
-published. This remains evidence for review, not artifact clearance. Do not claim an
-aggregate SPDX license until that review is complete.
+The versioned [LICENSES](LICENSES/) bundle reproduces the Deno, direct JSR, micromamba
+and Project Chrono notices, the micromamba-docker attribution, the SQLite public-domain
+blessing, and the corresponding-source locations for the selected runtime. The final
+image keeps that bundle at `/usr/share/licenses/mcp-chrono/`.
+
+Before deleting the large Conda package cache, the build copies `info/index.json`,
+`info/about.json`, the complete `info/licenses/` tree and the complete `info/recipe/`
+tree from every exact archive into `/opt/conda/share/mcp-chrono/conda-notices/`. Its
+generated manifest records the declared licence and retained files for every installed
+Conda metadata record. Ubuntu copyright files remain under `/usr/share/doc/`, common
+licence texts remain under `/usr/share/common-licenses/`, and cached npm packages retain
+their package metadata and notice files under `/opt/deno/npm/registry.npmjs.org/`.
+
+CI and release verification fail closed if those final-image notice boundaries do not
+cover the installed Conda metadata, Ubuntu packages and cached npm packages. They also
+generate an SPDX SBOM with the Conda cataloger explicitly enabled and gate the pinned
+Chrono/PyChrono components and CPU-only exclusions. A GHCR release additionally carries
+BuildKit SBOM and provenance attestations.
+
+The lock, notices, SBOM and provenance are complementary records. The aggregate OCI
+licence label remains `NOASSERTION`; do not describe the image as MIT-only or infer
+legal advice from this technical inventory.

@@ -13,6 +13,11 @@
     "smoke": "deno run -A scripts/smoke.ts",
     "release:check": "deno fmt --check && deno task check && deno task lint && deno task test && deno publish --dry-run"
   },
-  "fmt": { "lineWidth": 88, "indentWidth": 2, "singleQuote": false },
+  "fmt": {
+    "exclude": ["LICENSES"],
+    "lineWidth": 88,
+    "indentWidth": 2,
+    "singleQuote": false
+  },
   "lint": { "rules": { "tags": ["recommended"] } }
 }
