@@ -178,9 +178,11 @@ deno publish --dry-run
 CI runs the source checks plus a linux/amd64 container build and authenticated one-joint
 native smoke. Each candidate emits its image ID, exact Docker image size, a `gzip -n`
 compressed `docker save` byte size, layer history, and a pre-publication SPDX SBOM for
-review. A release tag must exactly equal the package version, then pass the same plain
-gates. Publication is disabled by default: both JSR and GHCR publication run only when
-the repository Actions variable `CHRONO_RELEASE_ENABLED` is exactly `true`. Set that
+review. CI explicitly enables Syft's Conda metadata cataloger and fails unless that SBOM
+contains the pinned Chrono and PyChrono versions without the excluded package families.
+A release tag must exactly equal the package version, then pass the same plain gates.
+Publication is disabled by default: both JSR and GHCR publication run only when the
+repository Actions variable `CHRONO_RELEASE_ENABLED` is exactly `true`. Set that
 variable only after explicit artifact clearance; a tag by itself never publishes either
 artifact. JSR and GHCR are independent external transactions, so success of one does not
 make the pair atomic and a failure after JSR can leave a package without its image. On a

@@ -37,6 +37,8 @@ jobs:
           docker history --no-trunc mcp-chrono:ci
       - name: Generate candidate SPDX SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        env:
+          SYFT_SELECT_CATALOGERS: "+conda-meta-cataloger"
         with:
           image: mcp-chrono:ci
           format: spdx-json
@@ -44,3 +46,14 @@ jobs:
           artifact-name: mcp-chrono-ci-sbom
           upload-artifact: true
           upload-release-assets: false
+      - name: Verify candidate SBOM dependency boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            ([.packages[] | select(.name == "chrono" and .versionInfo == "10.0.0")] | length == 1)
+            and
+            ([.packages[] | select(.name == "pychrono" and .versionInfo == "10.0.0")] | length == 1)
+          ' mcp-chrono-ci.spdx.json >/dev/null
+          ! jq -r '.packages[].name' mcp-chrono-ci.spdx.json \
+            | grep -Ei '^(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|libegl|libopengl|opengl|xorg-|font-|fonts-|qt|vtk|irrlicht)'

@@ -10,8 +10,9 @@
   import and required symbols on the pruned tree. The native container smoke remains the
   qualification oracle for the resulting image.
 - Added candidate image-size, compressed image-export, layer-history, and SPDX SBOM
-  evidence before publication review. This evidence does not clear the image for
-  distribution.
+  evidence before publication review. The SBOM gate explicitly requires the pinned
+  Chrono/PyChrono components and rejects the excluded package families. This evidence
+  does not clear the image for distribution.
 - Added the Linux/amd64 explicit Project Chrono transaction, frozen Deno dependency
   cache, authenticated container boundary, and native MCP smoke definition.
 - Added release provenance/SBOM configuration and a strict opt-in publication gate. JSR

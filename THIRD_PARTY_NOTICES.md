@@ -16,7 +16,8 @@ The image contains these directly selected components:
 
 The lock is an inventory and integrity record, not a substitute for upstream license
 texts, source-offer, relinking, or notice obligations. Candidate CI and release-verify
-builds generate an SPDX SBOM; maintainers must review that SBOM and the final image
-before publication, then review generated provenance if the image is published. This
-remains evidence for review, not artifact clearance. Do not claim an aggregate SPDX
-license until that review is complete.
+builds generate an SPDX SBOM with the Conda metadata cataloger explicitly enabled and
+gated on the pinned Chrono/PyChrono components. Maintainers must review that SBOM and
+the final image before publication, then review generated provenance if the image is
+published. This remains evidence for review, not artifact clearance. Do not claim an
+aggregate SPDX license until that review is complete.

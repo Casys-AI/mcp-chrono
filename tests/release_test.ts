@@ -142,8 +142,13 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
       ),
     );
     assert(workflow.includes("format: spdx-json"));
+    assert(
+      workflow.includes('SYFT_SELECT_CATALOGERS: "+conda-meta-cataloger"'),
+    );
     assert(workflow.includes("upload-artifact: true"));
     assert(workflow.includes("upload-release-assets: false"));
+    assert(workflow.includes('.name == "chrono"'));
+    assert(workflow.includes('.name == "pychrono"'));
   }
   assert(ci.includes("image: mcp-chrono:ci"));
   assert(release.includes("image: mcp-chrono:release-verify"));
