@@ -184,6 +184,11 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   );
   assert(!ghcrJob.includes("deno publish"));
   assert(ghcrJob.includes("docker/login-action"));
+  assert(
+    ghcrJob.includes(
+      "docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e",
+    ),
+  );
   assert(ghcrJob.includes("push: true"));
   assert(release.includes("REGISTRY_IMAGE: ghcr.io/casys-ai/mcp-chrono"));
   assert(
