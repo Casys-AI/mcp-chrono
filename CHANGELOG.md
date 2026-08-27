@@ -21,6 +21,9 @@
 - Recorded private linux/amd64 probe qualification: `docker-smoke` covered
   authentication, MCP, the one-joint π/2 pose, residuals and replay/conflict. Separate
   VPS probes covered child loopback binding and SIGTERM exit status 0.
+- Deployed the CPU-only private loopback probe from source commit `05c0ba9`; its
+  isolated native smoke and live authenticated manifest probe passed, while the
+  historical image remains available as a private rollback target.
 - Clarified that submitted absolute poses are zero-angle references; an observed `t=0`
   sample follows assembly with `initial_angle_rad` applied and may differ.
 - Extended the authenticated Docker smoke definition with a zero-speed `0.5` rad

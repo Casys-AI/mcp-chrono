@@ -158,12 +158,20 @@ established the non-zero initial-angle semantics: from the zero-angle child refe
 `0.5`, position `[cos(0.5),sin(0.5),0]`, and quaternion `[cos(0.25),0,0,sin(0.25)]`. The
 smoke definition now repeats that second zero-speed case, so future smoke runs enforce
 the same observed assembly rule. Separate VPS probes established that the child binds to
-loopback and that SIGTERM exits with status 0. The CPU-only candidate removes unused
-Chrono datasets and PyChrono demos, then validates the core import on the pruned tree;
-the worker does not call them. Native smoke remains the oracle for that pruned
-candidate, while demo/data paths and modules that depend on those assets are outside
-this provider's coverage. This is private qualification of the named probe image only;
-it does not make a package or OCI image public, published, or license-cleared.
+loopback and that SIGTERM exits with status 0.
+
+The CPU-only private VPS probe now runs source commit
+`05c0ba9b580a76d6bdb00f609dddc38a03c18e7b` as local Docker image ID
+`sha256:fb3af9519ff60c1911221c2a3286a112eb7aeae6cd9c089f042d9a9275d62d3d` at
+1,834,210,654 bytes, 70.1% below the historical image. Its `gzip -n` compressed Docker
+export is 800,315,938 bytes. It passed the isolated native smoke and a live
+authenticated manifest probe; the historical image ID is retained privately as the
+rollback target. The CPU-only image removes unused Chrono datasets and PyChrono demos,
+then validates the core import on the pruned tree; the worker does not call them. Native
+smoke remains the oracle for that pruned image, while demo/data paths and modules that
+depend on those assets are outside this provider's coverage. This is private
+qualification of the named probe image only; it does not make a package or OCI image
+public, published, or license-cleared.
 
 ## Development checks
 
