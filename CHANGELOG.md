@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 — unreleased
+
+- Added a canonical, content-addressed prescribed-kinematics receipt. It binds the exact
+  case SHA-256, outcome SHA-256, request identity, package/provider/worker/runtime
+  identities and literal execution state; it remains factual provenance, never a product
+  verdict.
+- Added read-only `chrono_case_get` and `chrono_run_receipt_get` identity readbacks.
+  Cases return their original UTF-8 bytes. Recorded observations remain paged, including
+  when read by receipt identity.
+- Made `motor_angle_rad` mandatory in every motor observation and reject a worker whose
+  literal raw kinematics exit code and name disagree.
+
 ## 0.2.0 — 2026-08-28
 
 - Added a complete runtime case contract: structural JSON Schema, valid non-executing

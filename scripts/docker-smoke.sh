@@ -109,6 +109,11 @@ case_json = json.dumps(case, separators=(",", ":"))
 case_sha256 = hashlib.sha256(case_json.encode()).hexdigest()
 submitted = rpc(1, "chrono_case_submit", {"case_json": case_json, "case_sha256": case_sha256})
 assert submitted["ok"] is True, submitted
+case_readback = rpc(8, "chrono_case_get", {"case_sha256": case_sha256})
+assert case_readback["ok"] is True, case_readback
+assert case_readback["case_sha256"] == case_sha256, case_readback
+assert case_readback["case_uri"] == submitted["case_uri"], case_readback
+assert case_readback["case_json"] == case_json, case_readback
 request_id = "native-smoke-one-joint"
 run = rpc(2, "chrono_run_prescribed_kinematics", {
     "request_id": request_id, "case_sha256": case_sha256,
@@ -118,11 +123,25 @@ assert run["ok"] is True, run
 assert run["replayed"] is False, run
 output = run["record"]["observation"]
 assert output["engine"] == {"name": "Project Chrono", "version": "10.0.0"}, output
+assert output["runtime"] == {"binding": "pychrono", "python_version": "3.12.14"}, output
 assert output["execution_state"] == "completed", output
 assert output["not_evaluated"] == [
     "collision", "clearance", "contact", "forces", "torques", "dynamics",
     "strength", "safety", "product fitness",
 ], output
+receipt = run["record"]["receipt"]
+assert receipt["case_sha256"] == case_sha256, receipt
+assert len(receipt["outcome_sha256"]) == 64, receipt
+assert len(receipt["receipt_sha256"]) == 64, receipt
+assert len(receipt["worker"]["source_sha256"]) == 64, receipt
+assert receipt["runtime"] == output["runtime"], receipt
+assert receipt["execution_state"] == output["execution_state"], receipt
+assert receipt["kinematics_exit"] == output["kinematics_exit"], receipt
+receipt_readback = rpc(9, "chrono_run_receipt_get", {
+    "receipt_sha256": receipt["receipt_sha256"],
+})
+assert receipt_readback["ok"] is True, receipt_readback
+assert receipt_readback["record"] == run["record"], receipt_readback
 
 def assert_close(value, expected, tolerance=1e-5):
     assert math.isfinite(value), value

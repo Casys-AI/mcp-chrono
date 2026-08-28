@@ -69,6 +69,7 @@ function summary(output: RunObservation): RunRecordView["observation"] {
   }
   return {
     engine: output.engine,
+    runtime: output.runtime,
     execution_state: output.execution_state,
     kinematics_exit: output.kinematics_exit,
     not_evaluated: output.not_evaluated,
@@ -90,6 +91,7 @@ export function toRunRecordView(
     request: record.request,
     case_uri: record.case_uri,
     recorded_at: record.recorded_at,
+    receipt: record.receipt,
     observation: summary(record.output),
     sample_page: samplePage(record.output.samples, request),
   };

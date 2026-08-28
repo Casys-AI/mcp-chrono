@@ -1,13 +1,28 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import { toRunRecordView } from "../src/domain/result-view.ts";
 import { ChronoError } from "../src/domain/errors.ts";
+import type { RunRecord } from "../src/domain/types.ts";
 import { observation } from "./test-helpers.ts";
 
-const record = {
+const record: RunRecord = {
   request: { request_id: "paged-run", case_sha256: "a".repeat(64) },
   case_uri: `chrono-case:sha256:${"a".repeat(64)}`,
   recorded_at: "2026-08-28T00:00:00.000Z",
   output: observation(20),
+  receipt: {
+    schema_id: "chrono-prescribed-kinematics-receipt/1.0",
+    receipt_sha256: "b".repeat(64),
+    case_sha256: "a".repeat(64),
+    outcome_sha256: "c".repeat(64),
+    request_id: "paged-run",
+    recorded_at: "2026-08-28T00:00:00.000Z",
+    package: { name: "@casys/mcp-chrono", version: "0.3.0" },
+    provider: { name: "casys-chrono", version: "0.3.0" },
+    worker: { source_sha256: "d".repeat(64) },
+    runtime: { binding: "pychrono", python_version: "3.12.0" },
+    execution_state: "completed",
+    kinematics_exit: { raw_code: 1, raw_name: "SUCCESS" },
+  },
 };
 
 Deno.test("MCP result views return a summary and a bounded default sample page", () => {

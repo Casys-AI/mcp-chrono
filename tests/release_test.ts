@@ -127,7 +127,7 @@ Deno.test("release pins and package version stay explicit", async () => {
       `CPU-only lock includes ${forbiddenPackagePrefix}`,
     );
   }
-  assertEquals(deno.version, "0.2.0");
+  assertEquals(deno.version, "0.3.0");
   assertEquals(deno.exports, {
     ".": "./mod.ts",
     "./server": "./server.ts",
@@ -242,7 +242,10 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(envExample.includes(publicImage));
   assert(!readme.includes("GHCR publication is still pending"));
   assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
+  assert(dockerSmoke.includes('"chrono_case_get"'));
+  assert(dockerSmoke.includes('"chrono_run_receipt_get"'));
   assert(dockerSmoke.includes('["record"]["observation"]'));
+  assert(dockerSmoke.includes('["record"]["receipt"]'));
   assert(dockerSmoke.includes('["record"]["sample_page"]'));
   assert(!dockerSmoke.includes('["record"]["output"]'));
   assert(dockerSmoke.includes('"initial_angle_rad": 0.5'));

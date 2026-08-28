@@ -93,12 +93,14 @@ function modernStdioRequest(
 async function exchangeStdio(
   requests: ReadonlyArray<Record<string, unknown>>,
 ): Promise<Map<number, StdioResponse>> {
+  const storeRoot = await Deno.makeTempDir();
   const child = new Deno.Command(Deno.execPath(), {
     args: ["run", "-A", "server.ts", "--stdio"],
     cwd: new URL("..", import.meta.url).pathname,
     stdin: "piped",
     stdout: "piped",
     stderr: "piped",
+    env: { CHRONO_STORE_DIR: storeRoot },
   }).spawn();
   const writer = child.stdin.getWriter();
   try {
@@ -108,27 +110,31 @@ async function exchangeStdio(
   } finally {
     await writer.close();
   }
-  const result = await Promise.race([
-    child.output(),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => {
-        try {
-          child.kill("SIGKILL");
-        } catch { /* process already stopped */ }
-        reject(new Error("stdio subprocess response timed out"));
-      }, 10_000)
-    ),
-  ]);
-  const decoder = new TextDecoder();
-  assert(result.success, decoder.decode(result.stderr));
+  try {
+    const result = await Promise.race([
+      child.output(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => {
+          try {
+            child.kill("SIGKILL");
+          } catch { /* process already stopped */ }
+          reject(new Error("stdio subprocess response timed out"));
+        }, 10_000)
+      ),
+    ]);
+    const decoder = new TextDecoder();
+    assert(result.success, decoder.decode(result.stderr));
 
-  const responses = new Map<number, StdioResponse>();
-  for (const line of decoder.decode(result.stdout).split("\n")) {
-    if (line.trim().length === 0) continue;
-    const response = JSON.parse(line) as StdioResponse;
-    if (typeof response.id === "number") responses.set(response.id, response);
+    const responses = new Map<number, StdioResponse>();
+    for (const line of decoder.decode(result.stdout).split("\n")) {
+      if (line.trim().length === 0) continue;
+      const response = JSON.parse(line) as StdioResponse;
+      if (typeof response.id === "number") responses.set(response.id, response);
+    }
+    return responses;
+  } finally {
+    await Deno.remove(storeRoot, { recursive: true });
   }
-  return responses;
 }
 
 Deno.test("HTTP wire supports modern discover, list and structured tool calls", async () => {
@@ -169,7 +175,7 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     assertEquals(manifestContent.ok, true);
     assertEquals(
       (manifestContent.manifest as Record<string, unknown>).version,
-      "0.2.0",
+      PROVIDER_VERSION,
     );
     assertEquals(
       (manifestContent.manifest as Record<string, unknown>).input_pose_semantics,
@@ -216,6 +222,14 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     assertEquals(
       (submitted.result?.structuredContent as Record<string, unknown>).case_sha256,
       sha,
+    );
+    const caseReadback = await rpc(port, 6, "tools/call", {
+      name: "chrono_case_get",
+      arguments: { case_sha256: sha },
+    });
+    assertEquals(
+      (caseReadback.result?.structuredContent as Record<string, unknown>).case_json,
+      text,
     );
     const rejected = await rpc(port, 6, "tools/call", {
       name: "chrono_case_submit",
@@ -280,6 +294,14 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
       1,
     );
     assertEquals((record.sample_page as Record<string, unknown>).has_more, true);
+    const receipt = record.receipt as Record<string, unknown>;
+    assertEquals(receipt.case_sha256, sha);
+    assertEquals((receipt.outcome_sha256 as string).length, 64);
+    assertEquals((receipt.receipt_sha256 as string).length, 64);
+    assertEquals((record.observation as Record<string, unknown>).runtime, {
+      binding: "pychrono",
+      python_version: "3.12.0",
+    });
     const secondPage = await rpc(port, 10, "tools/call", {
       name: "chrono_run_get",
       arguments: { request_id: "wire-paged", sample_offset: 1, sample_limit: 1 },
@@ -293,6 +315,15 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
       (page.samples as Array<Record<string, unknown>>)[0].time_s,
       1,
     );
+    const receiptReadback = await rpc(port, 11, "tools/call", {
+      name: "chrono_run_receipt_get",
+      arguments: { receipt_sha256: receipt.receipt_sha256 as string, sample_limit: 1 },
+    });
+    const receiptRecord =
+      (receiptReadback.result?.structuredContent as Record<string, unknown>)
+        .record as Record<string, unknown>;
+    assertEquals(receiptRecord.receipt, receipt);
+    assertEquals((receiptRecord.sample_page as Record<string, unknown>).has_more, true);
   } finally {
     await http.shutdown();
   }
@@ -356,6 +387,44 @@ Deno.test("stdio subprocess supports legacy initialization and a manifest call",
   assertEquals(
     manifestPayload.case_schema_id,
     "chrono-prescribed-kinematics-case/1.0",
+  );
+});
+
+Deno.test("stdio subprocess stores and rereads exact case bytes", async () => {
+  const text = JSON.stringify(caseData());
+  const sha = await sha256Utf8(text);
+  const responses = await exchangeStdio([
+    modernStdioRequest(1, "tools/call", {
+      name: "chrono_case_submit",
+      arguments: { case_json: text, case_sha256: sha },
+    }),
+    modernStdioRequest(2, "tools/call", {
+      name: "chrono_case_get",
+      arguments: { case_sha256: sha },
+    }),
+    modernStdioRequest(3, "tools/call", {
+      name: "chrono_run_receipt_get",
+      arguments: { receipt_sha256: "f".repeat(64) },
+    }),
+  ]);
+  const submitted = responses.get(1)?.result?.structuredContent as Record<
+    string,
+    unknown
+  >;
+  assertEquals(submitted.case_sha256, sha);
+  const readback = responses.get(2)?.result?.structuredContent as Record<
+    string,
+    unknown
+  >;
+  assertEquals(readback.case_json, text);
+  const missingReceipt = responses.get(3)?.result?.structuredContent as Record<
+    string,
+    unknown
+  >;
+  assertEquals(missingReceipt.ok, false);
+  assertEquals(
+    (missingReceipt.error as Record<string, unknown>).code,
+    "receipt_not_found",
   );
 });
 

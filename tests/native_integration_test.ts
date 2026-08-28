@@ -37,7 +37,7 @@ Deno.test("worker source names the fixed Chrono 10 kinematic API", async () => {
 Deno.test("native Project Chrono integration is explicit opt-in", async () => {
   if (Deno.env.get("CHRONO_NATIVE_INTEGRATION") !== "1") return;
   const input = oneJointCase();
-  const result = await new ChronoWorkerRunner().run(input, 15_000);
+  const result = (await new ChronoWorkerRunner().run(input, 15_000)).observation;
   assertEquals(result.engine.version, "10.0.0");
   assertEquals(result.not_evaluated[0], "collision");
   assertEquals(result.execution_state, "completed");
@@ -65,7 +65,7 @@ Deno.test("native t=0 applies the initial angle to zero-angle references", async
     angle_ramp: { initial_angle_rad: 0.5, angular_speed_rad_s: 0 },
   };
 
-  const t0 = (await new ChronoWorkerRunner().run(input, 15_000)).samples[0];
+  const t0 = (await new ChronoWorkerRunner().run(input, 15_000)).observation.samples[0];
   const close = (actual: number, expected: number) =>
     assert(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);
 

@@ -2,6 +2,7 @@
 """Fixed Project Chrono 10.0.0 prescribed-kinematics worker."""
 import json
 import math
+import platform
 import sys
 
 NOT_EVALUATED = ["collision", "clearance", "contact", "forces", "torques", "dynamics", "strength", "safety", "product fitness"]
@@ -18,6 +19,11 @@ REQUIRED_MOTOR_METHODS = (
     "GetMotorAngle",
     "GetConstraintViolation",
 )
+
+RUNTIME = {
+    "binding": "pychrono",
+    "python_version": platform.python_version(),
+}
 
 # Chrono 10.0.0 declares AssemblyAnalysis::ExitFlag as this contiguous enum.
 # Keep the native integer and its literal engine name together; an unexpected
@@ -147,6 +153,7 @@ def main(case):
     if is_not_converged(last_exit):
         return {
             "engine": {"name": "Project Chrono", "version": "10.0.0"},
+            "runtime": RUNTIME,
             "samples": samples,
             "not_evaluated": NOT_EVALUATED,
             "execution_state": "not_converged",
@@ -166,6 +173,7 @@ def main(case):
                 collect()
             return {
                 "engine": {"name": "Project Chrono", "version": "10.0.0"},
+                "runtime": RUNTIME,
                 "samples": samples,
                 "not_evaluated": NOT_EVALUATED,
                 "execution_state": "not_converged",
@@ -176,6 +184,7 @@ def main(case):
 
     return {
         "engine": {"name": "Project Chrono", "version": "10.0.0"},
+        "runtime": RUNTIME,
         "samples": samples,
         "not_evaluated": NOT_EVALUATED,
         "execution_state": "completed",

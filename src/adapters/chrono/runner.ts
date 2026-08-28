@@ -1,9 +1,10 @@
 import type { ChronoRunner } from "../../application/service.ts";
 import { ChronoError } from "../../domain/errors.ts";
+import { sha256Bytes } from "../../domain/sha.ts";
 import {
   CHRONO_VERSION,
   type PrescribedKinematicsCase,
-  type RunObservation,
+  type RunExecution,
 } from "../../domain/types.ts";
 
 const MAX_WORKER_OUTPUT = 4 * 1024 * 1024;
@@ -19,6 +20,13 @@ const NOT_EVALUATED = [
   "safety",
   "product fitness",
 ] as const;
+const EXIT_FLAG_NAMES: Readonly<Record<number, string>> = {
+  0: "NOT_CONVERGED",
+  1: "SUCCESS",
+  2: "ABSTOL_RESIDUAL",
+  3: "RELTOL_UPDATE",
+  4: "ABSTOL_UPDATE",
+};
 
 function object(value: unknown, path: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -109,7 +117,10 @@ export class ChronoWorkerRunner implements ChronoRunner {
   async run(
     caseData: PrescribedKinematicsCase,
     timeoutMs: number,
-  ): Promise<RunObservation> {
+  ): Promise<RunExecution> {
+    const worker = {
+      source_sha256: await sha256Bytes(await Deno.readFile(this.workerPath)),
+    };
     const child = new Deno.Command(this.python, {
       args: [this.workerPath],
       stdin: "piped",
@@ -162,7 +173,7 @@ export class ChronoWorkerRunner implements ChronoRunner {
           "Chrono worker returned invalid JSON.",
         );
       }
-      return this.validateObservation(parsed, caseData);
+      return { observation: this.validateObservation(parsed, caseData), worker };
     } catch (error) {
       try {
         child.kill("SIGKILL");
@@ -176,10 +187,11 @@ export class ChronoWorkerRunner implements ChronoRunner {
   private validateObservation(
     value: unknown,
     input: PrescribedKinematicsCase,
-  ): RunObservation {
+  ): RunExecution["observation"] {
     const top = object(value, "worker output");
     exactKeys(top, [
       "engine",
+      "runtime",
       "samples",
       "not_evaluated",
       "execution_state",
@@ -191,6 +203,17 @@ export class ChronoWorkerRunner implements ChronoRunner {
       throw new ChronoError(
         "worker_invalid_output",
         "Worker engine identity is not Project Chrono 10.0.0.",
+      );
+    }
+    const runtime = object(top.runtime, "runtime");
+    exactKeys(runtime, ["binding", "python_version"], "runtime");
+    if (
+      runtime.binding !== "pychrono" || typeof runtime.python_version !== "string" ||
+      !/^\d+\.\d+\.\d+$/.test(runtime.python_version)
+    ) {
+      throw new ChronoError(
+        "worker_invalid_output",
+        "Worker runtime identity is invalid.",
       );
     }
     if (
@@ -213,19 +236,24 @@ export class ChronoWorkerRunner implements ChronoRunner {
     }
     const exit = object(top.kinematics_exit, "kinematics_exit");
     exactKeys(exit, ["raw_code", "raw_name"], "kinematics_exit");
-    if (
-      exit.raw_code !== null &&
-      (!Number.isInteger(exit.raw_code) || !Number.isFinite(exit.raw_code))
-    ) {
+    if (!Number.isInteger(exit.raw_code) || !Number.isFinite(exit.raw_code)) {
       throw new ChronoError(
         "worker_invalid_output",
         "Worker raw exit code is invalid.",
       );
     }
-    if (exit.raw_name !== null && typeof exit.raw_name !== "string") {
+    if (typeof exit.raw_name !== "string") {
       throw new ChronoError(
         "worker_invalid_output",
         "Worker raw exit name is invalid.",
+      );
+    }
+    if (
+      EXIT_FLAG_NAMES[exit.raw_code as number] !== exit.raw_name
+    ) {
+      throw new ChronoError(
+        "worker_invalid_output",
+        "Worker raw exit code and name are inconsistent.",
       );
     }
     if (
@@ -323,12 +351,14 @@ export class ChronoWorkerRunner implements ChronoRunner {
           | "below"
           | "within"
           | "above";
-        const motor_angle_rad = motor.motor_angle_rad === undefined
-          ? undefined
-          : finite(motor.motor_angle_rad, "motor.motor_angle_rad");
-        const observedAngle = motor_angle_rad ??
-          input.joints[jointIndex].angle_ramp.initial_angle_rad +
-            input.joints[jointIndex].angle_ramp.angular_speed_rad_s * time_s;
+        if (!("motor_angle_rad" in motor)) {
+          throw new ChronoError(
+            "worker_invalid_output",
+            "Worker must report every observed motor angle.",
+          );
+        }
+        const motor_angle_rad = finite(motor.motor_angle_rad, "motor.motor_angle_rad");
+        const observedAngle = motor_angle_rad;
         const [lower, upper] = input.joints[jointIndex].limits_rad;
         const expectedRelation = observedAngle < lower
           ? "below"
@@ -352,7 +382,7 @@ export class ChronoWorkerRunner implements ChronoRunner {
             motor.rotation_quaternion_imag_residual,
             "motor.rotation_quaternion_imag_residual",
           ),
-          ...(motor_angle_rad === undefined ? {} : { motor_angle_rad }),
+          motor_angle_rad,
         };
       });
       return { time_s, bodies, motors };
@@ -381,10 +411,14 @@ export class ChronoWorkerRunner implements ChronoRunner {
       );
     }
     const execution_state = top.execution_state as "completed" | "not_converged";
-    const raw_code = exit.raw_code === null ? null : exit.raw_code as number;
-    const raw_name = exit.raw_name === null ? null : exit.raw_name as string;
+    const raw_code = exit.raw_code as number;
+    const raw_name = exit.raw_name as string;
     return {
       engine: { name: "Project Chrono", version: CHRONO_VERSION },
+      runtime: {
+        binding: "pychrono",
+        python_version: runtime.python_version,
+      },
       samples,
       not_evaluated: NOT_EVALUATED,
       execution_state,

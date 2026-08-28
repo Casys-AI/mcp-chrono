@@ -11,6 +11,7 @@ import {
   MAX_SAMPLE_PAGE_LIMIT,
   MAX_SAMPLE_PAGE_OFFSET,
   NON_CLAIMS,
+  RECEIPT_CONTRACT,
   RESULT_PAGING_CONTRACT,
   SUBMISSION_CONTRACT,
 } from "../domain/contract.ts";
@@ -18,8 +19,10 @@ import { errorResult } from "../domain/errors.ts";
 import { normalizeSamplePageRequest } from "../domain/result-view.ts";
 import { PROVIDER_VERSION, type RunRequest } from "../domain/types.ts";
 import {
+  caseGetOutputSchema,
   caseSubmitOutputSchema,
   manifestOutputSchema,
+  receiptGetOutputSchema,
   runGetOutputSchema,
   runOutputSchema,
   templateOutputSchema,
@@ -84,6 +87,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
           authority: "explicit mechanics input to factual observations only",
           submission: SUBMISSION_CONTRACT,
           result_paging: RESULT_PAGING_CONTRACT,
+          receipt: RECEIPT_CONTRACT,
           agent_workflow: AGENT_WORKFLOW,
           non_claims: NON_CLAIMS,
         },
@@ -135,6 +139,27 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
       return success("Case stored under its content-addressed identity.", {
         ok: true,
         ...result,
+      });
+    } catch (error) {
+      return failure(error);
+    }
+  });
+  app.registerTool({
+    name: "chrono_case_get",
+    description:
+      "Read exact UTF-8 case bytes by their content-addressed SHA-256. This is a readback of a submitted explicit case, not an inferred or reconstructed mechanics model.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["case_sha256"],
+      properties: { case_sha256: { type: "string", pattern: "^[a-f0-9]{64}$" } },
+    },
+    outputSchema: caseGetOutputSchema,
+  }, async (args) => {
+    try {
+      return success("Exact submitted case read by content identity.", {
+        ok: true,
+        ...await service.readCase(args.case_sha256 as string),
       });
     } catch (error) {
       return failure(error);
@@ -211,6 +236,34 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
       });
       const found = await service.lookupView(args.request_id as string, page);
       return success(`Run state: ${found.state}.`, { ok: true, ...found });
+    } catch (error) {
+      return failure(error);
+    }
+  });
+  app.registerTool({
+    name: "chrono_run_receipt_get",
+    description:
+      "Read a recorded run by its canonical receipt SHA-256. Return factual receipt provenance plus one bounded sample page; advance sample_offset while sample_page.has_more is true.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["receipt_sha256"],
+      properties: {
+        receipt_sha256: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        ...samplePageProperties,
+      },
+    },
+    outputSchema: receiptGetOutputSchema,
+  }, async (args) => {
+    try {
+      const page = normalizeSamplePageRequest({
+        sample_offset: args.sample_offset,
+        sample_limit: args.sample_limit,
+      });
+      return success("Recorded run read by canonical receipt identity.", {
+        ok: true,
+        record: await service.lookupReceiptView(args.receipt_sha256 as string, page),
+      });
     } catch (error) {
       return failure(error);
     }

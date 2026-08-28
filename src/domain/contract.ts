@@ -253,7 +253,8 @@ export const AGENT_WORKFLOW = [
   "Start from chrono_case_template_get or manifest.case_contract.example_case; fill every explicit pose, joint frame and SI value yourself.",
   "Serialize the final case as exact UTF-8 JSON and call chrono_case_submit. case_sha256 is optional; if supplied it is an expected digest and a mismatch fails without storage.",
   "Call chrono_run_prescribed_kinematics with the returned case_sha256 and a fresh request_id. Reuse a recorded request_id only for the same case.",
-  "Read records with chrono_run_get. It returns an observation summary plus a bounded sample page; advance sample_offset until has_more is false.",
+  "Use chrono_case_get with case_sha256 when another client must recover the exact submitted UTF-8 bytes.",
+  "Read records with chrono_run_get, or chrono_run_receipt_get with a recorded receipt_sha256. Both return an observation summary plus a bounded sample page; advance sample_offset until has_more is false.",
 ] as const;
 
 export const INPUT_POSE_SEMANTICS =
@@ -271,6 +272,12 @@ export const RESULT_PAGING_CONTRACT = {
   maximum_sample_offset: MAX_SAMPLE_PAGE_OFFSET,
   contract:
     "Recorded observations remain complete in the durable ledger. MCP run/readback responses contain a summary and one bounded sample_page only.",
+} as const;
+
+export const RECEIPT_CONTRACT = {
+  schema_id: "chrono-prescribed-kinematics-receipt/1.0",
+  contract:
+    "Every recorded run has a canonical receipt SHA-256 over its case identity, outcome SHA-256, request identity, recorded timestamp, package/provider/worker/runtime identities and literal execution state. The receipt is factual provenance, never a product verdict.",
 } as const;
 
 export const NON_CLAIMS = [

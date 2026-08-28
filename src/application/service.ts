@@ -1,12 +1,13 @@
 import { ChronoError } from "../domain/errors.ts";
+import { createRunReceipt } from "../domain/receipt.ts";
 import { MAX_CASE_JSON_BYTES } from "../domain/contract.ts";
 import { type SamplePageRequest, toRunRecordView } from "../domain/result-view.ts";
 import { requireSha256, sha256Utf8 } from "../domain/sha.ts";
 import type {
   PrescribedKinematicsCase,
+  RunExecution,
   RunLookup,
   RunLookupView,
-  RunObservation,
   RunRecord,
   RunRecordView,
   RunRequest,
@@ -15,7 +16,7 @@ import { validateCase } from "../domain/validate.ts";
 import { FileChronoStore } from "./store.ts";
 
 export interface ChronoRunner {
-  run(caseData: PrescribedKinematicsCase, timeoutMs: number): Promise<RunObservation>;
+  run(caseData: PrescribedKinematicsCase, timeoutMs: number): Promise<RunExecution>;
 }
 export interface CaseSubmission {
   case_sha256: string;
@@ -133,12 +134,20 @@ export class ChronoService {
         { request_id: request.request_id },
       );
     }
-    const output = await this.runner.run(admittedCase, timeoutMs);
+    const execution = await this.runner.run(admittedCase, timeoutMs);
+    const recorded_at = new Date().toISOString();
     const record: RunRecord = {
       request,
       case_uri: caseUri,
-      recorded_at: new Date().toISOString(),
-      output,
+      recorded_at,
+      output: execution.observation,
+      receipt: await createRunReceipt(
+        sha256,
+        request,
+        recorded_at,
+        execution.observation,
+        execution.worker,
+      ),
     };
     await this.store.writeRecorded(record);
     return { replayed: false, record };
@@ -157,6 +166,20 @@ export class ChronoService {
   }
   viewRecord(record: RunRecord, page: SamplePageRequest = {}): RunRecordView {
     return toRunRecordView(record, page);
+  }
+  async readCase(sha256: string): Promise<CaseSubmission & { case_json: string }> {
+    const case_sha256 = requireSha256(sha256);
+    return {
+      case_sha256,
+      case_uri: `${CASE_URI_PREFIX}${case_sha256}`,
+      case_json: await this.store.readCaseText(case_sha256),
+    };
+  }
+  async lookupReceiptView(
+    receiptSha256: string,
+    page: SamplePageRequest = {},
+  ): Promise<RunRecordView> {
+    return this.viewRecord(await this.store.lookupReceipt(receiptSha256), page);
   }
   private async reopenValidatedCase(sha256: string): Promise<PrescribedKinematicsCase> {
     const bytes = await this.store.reopenCase(sha256);

@@ -123,11 +123,17 @@ export class FileChronoStore {
   private requestsDir(): string {
     return `${this.root}/requests`;
   }
+  private receiptsDir(): string {
+    return `${this.root}/receipts`;
+  }
   private casePath(hash: string): string {
     return `${this.casesDir()}/${hash}.json`;
   }
   private requestDir(requestId: string): string {
     return `${this.requestsDir()}/${requestId}`;
+  }
+  private receiptPath(receiptSha256: string): string {
+    return `${this.receiptsDir()}/${receiptSha256}.json`;
   }
   async initialize(): Promise<void> {
     // Directory entries are made durable by syncing their parent. Do this before
@@ -143,6 +149,8 @@ export class FileChronoStore {
     await createDirectory(this.casesDir());
     await syncDirectory(this.root);
     await createDirectory(this.requestsDir());
+    await syncDirectory(this.root);
+    await createDirectory(this.receiptsDir());
     await syncDirectory(this.root);
   }
   async putCase(bytes: Uint8Array, expectedSha256: string): Promise<string> {
@@ -187,9 +195,18 @@ export class FileChronoStore {
       try {
         const caseSha256 = persistedRecordCaseSha256(record, requestId);
         const input = await this.reopenPersistedCase(caseSha256);
+        const validated = await validatePersistedRecord(record, requestId, input);
+        // A power loss can occur after the request record is atomically
+        // published but before its secondary receipt index. The request record
+        // is authoritative and deterministically recreates that index; this
+        // recovers the result without another native dispatch.
+        await this.publishReceiptIndex(
+          validated,
+          encoder.encode(JSON.stringify(validated)),
+        );
         return {
           state: "recorded",
-          record: validatePersistedRecord(record, requestId, input),
+          record: validated,
         };
       } catch {
         throw new ChronoError("store_corrupt", "Persisted run record is invalid.");
@@ -243,10 +260,20 @@ export class FileChronoStore {
   }
   async writeRecorded(record: RunRecord): Promise<void> {
     this.requireRequestId(record.request.request_id);
-    const dir = this.requestDir(record.request.request_id);
-    const found = await this.lookup(record.request.request_id);
+    const caseSha256 = requireSha256(record.request.case_sha256);
+    const input = await this.reopenPersistedCase(caseSha256);
+    // The receipt digest becomes a filesystem name below. Validate the complete
+    // immutable record first so no internal caller can turn that identity into a
+    // path, publish a malformed provenance object, or bypass receipt binding.
+    const validated = await validatePersistedRecord(
+      record,
+      record.request.request_id,
+      input,
+    );
+    const dir = this.requestDir(validated.request.request_id);
+    const found = await this.lookup(validated.request.request_id);
     if (found.state === "recorded") {
-      if (found.record.request.case_sha256 !== record.request.case_sha256) {
+      if (found.record.request.case_sha256 !== validated.request.case_sha256) {
         throw new ChronoError(
           "request_conflict",
           "request_id is already bound to another case.",
@@ -257,22 +284,23 @@ export class FileChronoStore {
     if (found.state !== "uncertain") {
       throw new ChronoError("store_corrupt", "A run result has no durable intent.");
     }
-    if (found.intent.request.case_sha256 !== record.request.case_sha256) {
+    if (found.intent.request.case_sha256 !== validated.request.case_sha256) {
       throw new ChronoError(
         "request_conflict",
         "request_id is already bound to another case.",
       );
     }
-    const outcome = await publishNew(
-      dir,
-      "record.json",
-      encoder.encode(JSON.stringify(record)),
-    );
+    const bytes = encoder.encode(JSON.stringify(validated));
+    // The request record is the recovery root. Publishing it before its
+    // receipt index means a retry by the durable request identity can repair a
+    // crash in the second publication step without rerunning native Chrono.
+    const outcome = await publishNew(dir, "record.json", bytes);
     if (outcome === "exists") {
       const nowRecorded = await this.lookup(record.request.request_id);
       if (nowRecorded.state === "recorded") return;
       throw new ChronoError("store_corrupt", "Recorded outcome marker is malformed.");
     }
+    await this.publishReceiptIndex(validated, bytes);
   }
   async readCaseText(hash: string): Promise<string> {
     try {
@@ -280,6 +308,56 @@ export class FileChronoStore {
     } catch (error) {
       if (error instanceof ChronoError) throw error;
       throw new ChronoError("store_corrupt", "Stored case is not valid UTF-8.");
+    }
+  }
+  async lookupReceipt(receiptSha256: string): Promise<RunRecord> {
+    const receipt = requireSha256(receiptSha256);
+    const record = await readJson<RunRecord>(this.receiptPath(receipt));
+    if (!record) {
+      throw new ChronoError(
+        "receipt_not_found",
+        "No stored run has that receipt SHA-256.",
+      );
+    }
+    try {
+      const caseSha256 = persistedRecordCaseSha256(
+        record,
+        record.request?.request_id ?? "",
+      );
+      const input = await this.reopenPersistedCase(caseSha256);
+      const validated = await validatePersistedRecord(
+        record,
+        record.request.request_id,
+        input,
+      );
+      if (validated.receipt.receipt_sha256 !== receipt) {
+        throw new ChronoError(
+          "store_corrupt",
+          "Receipt index does not match its run record.",
+        );
+      }
+      return validated;
+    } catch (error) {
+      if (error instanceof ChronoError && error.code === "store_corrupt") throw error;
+      throw new ChronoError("store_corrupt", "Persisted receipt record is invalid.");
+    }
+  }
+  private async publishReceiptIndex(
+    record: RunRecord,
+    bytes: Uint8Array,
+  ): Promise<void> {
+    const outcome = await publishNew(
+      this.receiptsDir(),
+      `${record.receipt.receipt_sha256}.json`,
+      bytes,
+    );
+    if (outcome !== "exists") return;
+    const byReceipt = await this.lookupReceipt(record.receipt.receipt_sha256);
+    if (byReceipt.request.request_id !== record.request.request_id) {
+      throw new ChronoError(
+        "store_corrupt",
+        "Receipt identity is bound to another request.",
+      );
     }
   }
   private async reopenPersistedCase(hash: string): Promise<PrescribedKinematicsCase> {

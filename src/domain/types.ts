@@ -1,6 +1,7 @@
 export const CASE_SCHEMA_ID = "chrono-prescribed-kinematics-case/1.0" as const;
+export const RECEIPT_SCHEMA_ID = "chrono-prescribed-kinematics-receipt/1.0" as const;
 export const CHRONO_VERSION = "10.0.0" as const;
-export const PROVIDER_VERSION = "0.2.0" as const;
+export const PROVIDER_VERSION = "0.3.0" as const;
 
 export type Vec3 = readonly [number, number, number];
 export type Quat = readonly [number, number, number, number];
@@ -44,7 +45,7 @@ export interface RunRequest {
 }
 export interface MotorObservation {
   joint_id: string;
-  motor_angle_rad?: number;
+  motor_angle_rad: number;
   declared_limit_observation: "below" | "within" | "above";
   translation_residual_m: [number, number, number];
   rotation_quaternion_imag_residual: [number, number, number];
@@ -61,6 +62,7 @@ export interface KinematicsSample {
 }
 export interface RunObservation {
   engine: { name: "Project Chrono"; version: typeof CHRONO_VERSION };
+  runtime: { binding: "pychrono"; python_version: string };
   samples: KinematicsSample[];
   not_evaluated: readonly [
     "collision",
@@ -74,18 +76,41 @@ export interface RunObservation {
     "product fitness",
   ];
   execution_state: "completed" | "not_converged";
-  kinematics_exit: { raw_code: number | null; raw_name: string | null };
+  kinematics_exit: { raw_code: number; raw_name: string };
+}
+export interface WorkerIdentity {
+  source_sha256: string;
+}
+export interface RunExecution {
+  observation: RunObservation;
+  worker: WorkerIdentity;
+}
+export interface RunReceipt {
+  schema_id: typeof RECEIPT_SCHEMA_ID;
+  receipt_sha256: string;
+  case_sha256: string;
+  outcome_sha256: string;
+  request_id: string;
+  recorded_at: string;
+  package: { name: "@casys/mcp-chrono"; version: typeof PROVIDER_VERSION };
+  provider: { name: "casys-chrono"; version: typeof PROVIDER_VERSION };
+  worker: WorkerIdentity;
+  runtime: RunObservation["runtime"];
+  execution_state: RunObservation["execution_state"];
+  kinematics_exit: RunObservation["kinematics_exit"];
 }
 export interface RunRecord {
   request: RunRequest;
   case_uri: string;
   recorded_at: string;
   output: RunObservation;
+  receipt: RunReceipt;
 }
 export interface RunObservationSummary {
   engine: { name: "Project Chrono"; version: typeof CHRONO_VERSION };
+  runtime: RunObservation["runtime"];
   execution_state: "completed" | "not_converged";
-  kinematics_exit: { raw_code: number | null; raw_name: string | null };
+  kinematics_exit: { raw_code: number; raw_name: string };
   not_evaluated: RunObservation["not_evaluated"];
   sample_count: number;
   sample_time_range_s: { first: number; last: number };
@@ -102,6 +127,7 @@ export interface RunRecordView {
   request: RunRequest;
   case_uri: string;
   recorded_at: string;
+  receipt: RunReceipt;
   observation: RunObservationSummary;
   sample_page: SamplePage;
 }

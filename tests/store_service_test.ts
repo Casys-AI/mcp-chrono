@@ -3,6 +3,8 @@ import { dirname } from "node:path";
 import { ChronoService } from "../src/application/service.ts";
 import { FileChronoStore } from "../src/application/store.ts";
 import { sha256Utf8 } from "../src/domain/sha.ts";
+import { createRunReceipt } from "../src/domain/receipt.ts";
+import type { RunRecord } from "../src/domain/types.ts";
 import { caseData, FakeRunner, observation } from "./test-helpers.ts";
 
 async function setup() {
@@ -148,6 +150,86 @@ Deno.test("syntactically valid but forged ledger entries are store_corrupt", asy
     "Persisted run record is invalid",
   );
 });
+Deno.test("receipt identity detects a semantically shaped but altered observation", async () => {
+  const { root, service, sha, text } = await setup();
+  await service.submit(text, sha);
+  await service.run({ request_id: "tampered-receipt", case_sha256: sha });
+  const path = `${root}/requests/tampered-receipt/record.json`;
+  const raw = JSON.parse(await Deno.readTextFile(path)) as Record<string, unknown>;
+  const samples = (raw.output as Record<string, unknown>).samples as Array<
+    Record<string, unknown>
+  >;
+  const body = (samples[1].bodies as Array<Record<string, unknown>>)[0];
+  body.position_m = [7, 0, 0];
+  await Deno.writeTextFile(path, JSON.stringify(raw));
+  await assertRejects(() => service.lookup("tampered-receipt"), Error, "invalid");
+});
+Deno.test("store validates a receipt before deriving its immutable index path", async () => {
+  const { root, service, sha, text } = await setup();
+  await service.submit(text, sha);
+  const store = new FileChronoStore(root);
+  const request = { request_id: "invalid-receipt-path", case_sha256: sha };
+  await store.writeIntent({
+    request,
+    case_uri: `chrono-case:sha256:${sha}`,
+    intent_recorded_at: "2026-01-01T00:00:00.000Z",
+  });
+  const output = observation();
+  const record = {
+    request,
+    case_uri: `chrono-case:sha256:${sha}`,
+    recorded_at: "2026-01-01T00:00:01.000Z",
+    output,
+    receipt: {
+      ...await createRunReceipt(
+        sha,
+        request,
+        "2026-01-01T00:00:01.000Z",
+        output,
+        { source_sha256: "f".repeat(64) },
+      ),
+      receipt_sha256: "../escaped",
+    },
+  } as unknown as RunRecord;
+  await assertRejects(() => store.writeRecorded(record), Error, "SHA-256");
+  await assertRejects(() => Deno.stat(`${root}/escaped.json`), Deno.errors.NotFound);
+});
+Deno.test("a recorded request repairs a missing receipt index without rerunning", async () => {
+  const { root, service, runner, sha, text } = await setup();
+  await service.submit(text, sha);
+  const store = new FileChronoStore(root);
+  const request = { request_id: "repair-receipt-index", case_sha256: sha };
+  await store.writeIntent({
+    request,
+    case_uri: `chrono-case:sha256:${sha}`,
+    intent_recorded_at: "2026-01-01T00:00:00.000Z",
+  });
+  const output = observation();
+  const record: RunRecord = {
+    request,
+    case_uri: `chrono-case:sha256:${sha}`,
+    recorded_at: "2026-01-01T00:00:01.000Z",
+    output,
+    receipt: await createRunReceipt(
+      sha,
+      request,
+      "2026-01-01T00:00:01.000Z",
+      output,
+      { source_sha256: "f".repeat(64) },
+    ),
+  };
+  await Deno.writeTextFile(
+    `${root}/requests/${request.request_id}/record.json`,
+    JSON.stringify(record),
+  );
+  const recovered = await service.run(request);
+  assertEquals(recovered.replayed, true);
+  assertEquals(runner.calls, 0);
+  assertEquals(
+    (await store.lookupReceipt(record.receipt.receipt_sha256)).request.request_id,
+    request.request_id,
+  );
+});
 Deno.test("immutable publication is usable with directory sync on macOS and Linux", async () => {
   assert(["darwin", "linux"].includes(Deno.build.os));
   const { root, service, sha, text } = await setup();
@@ -158,18 +240,35 @@ Deno.test("immutable publication is usable with directory sync on macOS and Linu
     case_uri: `chrono-case:sha256:${sha}`,
     intent_recorded_at: "2026-01-01T00:00:00.000Z",
   });
+  const request = { request_id: "synced-1", case_sha256: sha };
+  const recorded_at = "2026-01-01T00:00:01.000Z";
+  const output = observation();
   await store.writeRecorded({
-    request: { request_id: "synced-1", case_sha256: sha },
+    request,
     case_uri: `chrono-case:sha256:${sha}`,
-    recorded_at: "2026-01-01T00:00:01.000Z",
-    output: observation(),
+    recorded_at,
+    output,
+    receipt: await createRunReceipt(
+      sha,
+      request,
+      recorded_at,
+      output,
+      { source_sha256: "f".repeat(64) },
+    ),
   });
-  assertEquals((await store.lookup("synced-1")).state, "recorded");
+  const found = await store.lookup("synced-1");
+  assertEquals(found.state, "recorded");
   const names: string[] = [];
   for await (const entry of Deno.readDir(`${root}/requests/synced-1`)) {
     names.push(entry.name);
   }
   assertEquals(names.sort(), ["intent.json", "record.json"]);
+  assert(found.state === "recorded");
+  assert(
+    (await store.lookupReceipt(found.record.receipt.receipt_sha256)).request
+      .request_id ===
+      "synced-1",
+  );
 });
 
 Deno.test("intent publication syncs each newly created directory before use", async () => {
@@ -184,9 +283,9 @@ Deno.test("intent publication syncs each newly created directory before use", as
       intent_recorded_at: "2026-01-01T00:00:00.000Z",
     });
   });
-  assertEquals(synced.slice(0, 4), [parent, root, root, `${root}/requests`]);
-  assert(synced[4].startsWith(`${requestDir}/.intent.json.`));
-  assertEquals(synced[5], requestDir);
+  assertEquals(synced.slice(0, 5), [parent, root, root, root, `${root}/requests`]);
+  assert(synced[5].startsWith(`${requestDir}/.intent.json.`));
+  assertEquals(synced[6], requestDir);
 });
 
 Deno.test("an existing store root does not require access to its parent", async () => {
@@ -201,7 +300,7 @@ Deno.test("an existing store root does not require access to its parent", async 
     });
   });
   assert(!synced.includes(dirname(root)));
-  assertEquals(synced.slice(0, 3), [root, root, `${root}/requests`]);
-  assert(synced[3].startsWith(`${requestDir}/.intent.json.`));
-  assertEquals(synced[4], requestDir);
+  assertEquals(synced.slice(0, 4), [root, root, root, `${root}/requests`]);
+  assert(synced[4].startsWith(`${requestDir}/.intent.json.`));
+  assertEquals(synced[5], requestDir);
 });

@@ -1,4 +1,8 @@
-import type { PrescribedKinematicsCase, RunObservation } from "../src/domain/types.ts";
+import type {
+  PrescribedKinematicsCase,
+  RunExecution,
+  RunObservation,
+} from "../src/domain/types.ts";
 
 export const caseData = (): PrescribedKinematicsCase => ({
   schema_id: "chrono-prescribed-kinematics-case/1.0",
@@ -44,6 +48,7 @@ export const oneJointCase = (): PrescribedKinematicsCase => ({
 });
 export const observation = (sampleCount = 2): RunObservation => ({
   engine: { name: "Project Chrono", version: "10.0.0" },
+  runtime: { binding: "pychrono", python_version: "3.12.0" },
   samples: Array.from({ length: sampleCount }, (_, index) => ({
     time_s: sampleCount === 1 ? 0 : index / (sampleCount - 1),
     bodies: [{
@@ -65,12 +70,13 @@ export const observation = (sampleCount = 2): RunObservation => ({
     "product fitness",
   ],
   execution_state: "completed",
-  kinematics_exit: { raw_code: 0, raw_name: "OK" },
+  kinematics_exit: { raw_code: 1, raw_name: "SUCCESS" },
 });
 export const workerObservation = (
   input: PrescribedKinematicsCase,
 ): Record<string, unknown> => ({
   engine: { name: "Project Chrono", version: "10.0.0" },
+  runtime: { binding: "pychrono", python_version: "3.12.0" },
   samples: [0, input.duration_s].map((time_s) => ({
     time_s,
     bodies: input.bodies.map((body) => ({
@@ -99,13 +105,16 @@ export const workerObservation = (
     "product fitness",
   ],
   execution_state: "completed",
-  kinematics_exit: { raw_code: 0, raw_name: "OK" },
+  kinematics_exit: { raw_code: 1, raw_name: "SUCCESS" },
 });
 export class FakeRunner {
   calls = 0;
   constructor(private readonly output: RunObservation = observation()) {}
-  run(): Promise<RunObservation> {
+  run(): Promise<RunExecution> {
     this.calls++;
-    return Promise.resolve(this.output);
+    return Promise.resolve({
+      observation: this.output,
+      worker: { source_sha256: "f".repeat(64) },
+    });
   }
 }

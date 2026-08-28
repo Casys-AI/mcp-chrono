@@ -1,9 +1,9 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. This release is **0.2.0**. Its tag workflow
-publishes the matching JSR package and public Linux/amd64 image only after the source,
-native smoke, notices and SBOM gates pass:
+kinematics using Project Chrono 10.0.0. This source tree prepares **0.3.0** and is not,
+by itself, a published JSR package or OCI release. The public 0.2.0 Linux/amd64 image
+was published only after the source, native smoke, notices and SBOM gates passed:
 
 ```text
 ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
@@ -60,18 +60,22 @@ validated before immutable storage under `chrono-case:sha256:<hex>`.
 
 `chrono_run_prescribed_kinematics` takes a bounded safe `request_id`, case SHA-256, an
 optional matching case URI and a bounded timeout. It reopens and rehashes exact stored
-bytes before execution. Intent is persisted first. A successful run is stored atomically
-as one record containing both its request ledger binding and output. Retrying a recorded
-request reuses that record; using its request ID for another case is a conflict. A
-persisted intent without a result is returned as literal `uncertain` and is never
-automatically rerun.
+bytes before execution. Intent is persisted first. A successful request record is
+published atomically with its ledger binding and output; its canonical receipt index is
+then published from that immutable record. The receipt binds the case identity, outcome
+SHA-256, package/provider/worker/runtime identities and literal execution state. A crash
+between those two publications is repaired from the request record on the next request
+identity lookup, without rerunning native Chrono. Retrying a recorded request reuses
+that record; using its request ID for another case is a conflict. A persisted intent
+without a result is returned as literal `uncertain` and is never automatically rerun.
 
 Run and readback responses expose an observation summary plus one `sample_page`, never
 the full stored observation. Omit page arguments for the first 16 samples, or set
 `sample_offset` and `sample_limit` (1–64) and continue while `has_more` is true.
 `chrono_run_get` exposes recorded, uncertain or absent state through the same bounded
-view. The provider uses identity-bound URIs and readback rather than pretending that
-dynamic case or run resources have been registered.
+view. `chrono_case_get` rereads exact stored case bytes by case SHA-256;
+`chrono_run_receipt_get` rereads a recorded run by receipt SHA-256 through the same
+bounded page contract. These are identity readbacks, not dynamic MCP resources.
 
 Tool output is structured and error payloads use stable codes such as `case_invalid`,
 `case_sha256_mismatch`, `invalid_sample_offset`, `invalid_sample_limit`,

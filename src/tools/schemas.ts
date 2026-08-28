@@ -5,10 +5,16 @@ import {
   CASE_TEMPLATE,
   INPUT_POSE_SEMANTICS,
   NON_CLAIMS,
+  RECEIPT_CONTRACT,
   RESULT_PAGING_CONTRACT,
   SUBMISSION_CONTRACT,
 } from "../domain/contract.ts";
-import { CASE_SCHEMA_ID, CHRONO_VERSION, PROVIDER_VERSION } from "../domain/types.ts";
+import {
+  CASE_SCHEMA_ID,
+  CHRONO_VERSION,
+  PROVIDER_VERSION,
+  RECEIPT_SCHEMA_ID,
+} from "../domain/types.ts";
 
 const sha256Schema = { type: "string", pattern: "^[a-f0-9]{64}$" } as const;
 const requestIdSchema = {
@@ -20,12 +26,6 @@ const requestIdSchema = {
 const caseUriSchema = {
   type: "string",
   pattern: "^chrono-case:sha256:[a-f0-9]{64}$",
-} as const;
-const nullableIntegerSchema = {
-  oneOf: [{ type: "integer" }, { type: "null" }],
-} as const;
-const nullableStringSchema = {
-  oneOf: [{ type: "string" }, { type: "null" }],
 } as const;
 const vector3Schema = {
   type: "array",
@@ -77,14 +77,30 @@ const engineSchema = {
     version: { const: CHRONO_VERSION },
   },
 } as const;
+const runtimeSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["binding", "python_version"],
+  properties: {
+    binding: { const: "pychrono" },
+    python_version: { type: "string", pattern: "^\\d+\\.\\d+\\.\\d+$" },
+  },
+} as const;
 const kinematicsExitSchema = {
   type: "object",
   additionalProperties: false,
   required: ["raw_code", "raw_name"],
   properties: {
-    raw_code: nullableIntegerSchema,
-    raw_name: nullableStringSchema,
+    raw_code: { type: "integer" },
+    raw_name: { type: "string" },
   },
+  oneOf: [
+    { properties: { raw_code: { const: 0 }, raw_name: { const: "NOT_CONVERGED" } } },
+    { properties: { raw_code: { const: 1 }, raw_name: { const: "SUCCESS" } } },
+    { properties: { raw_code: { const: 2 }, raw_name: { const: "ABSTOL_RESIDUAL" } } },
+    { properties: { raw_code: { const: 3 }, raw_name: { const: "RELTOL_UPDATE" } } },
+    { properties: { raw_code: { const: 4 }, raw_name: { const: "ABSTOL_UPDATE" } } },
+  ],
 } as const;
 const requestSchema = {
   type: "object",
@@ -112,6 +128,7 @@ const motorObservationSchema = {
   additionalProperties: false,
   required: [
     "joint_id",
+    "motor_angle_rad",
     "declared_limit_observation",
     "translation_residual_m",
     "rotation_quaternion_imag_residual",
@@ -139,6 +156,7 @@ const observationSummarySchema = {
   additionalProperties: false,
   required: [
     "engine",
+    "runtime",
     "execution_state",
     "kinematics_exit",
     "not_evaluated",
@@ -147,6 +165,7 @@ const observationSummarySchema = {
   ],
   properties: {
     engine: engineSchema,
+    runtime: runtimeSchema,
     execution_state: { enum: ["completed", "not_converged"] },
     kinematics_exit: kinematicsExitSchema,
     not_evaluated: {
@@ -184,14 +203,75 @@ const samplePageSchema = {
     samples: { type: "array", maxItems: 64, items: sampleSchema },
   },
 } as const;
+const receiptSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "schema_id",
+    "receipt_sha256",
+    "case_sha256",
+    "outcome_sha256",
+    "request_id",
+    "recorded_at",
+    "package",
+    "provider",
+    "worker",
+    "runtime",
+    "execution_state",
+    "kinematics_exit",
+  ],
+  properties: {
+    schema_id: { const: RECEIPT_SCHEMA_ID },
+    receipt_sha256: sha256Schema,
+    case_sha256: sha256Schema,
+    outcome_sha256: sha256Schema,
+    request_id: requestIdSchema,
+    recorded_at: { type: "string" },
+    package: {
+      type: "object",
+      additionalProperties: false,
+      required: ["name", "version"],
+      properties: {
+        name: { const: "@casys/mcp-chrono" },
+        version: { const: PROVIDER_VERSION },
+      },
+    },
+    provider: {
+      type: "object",
+      additionalProperties: false,
+      required: ["name", "version"],
+      properties: {
+        name: { const: "casys-chrono" },
+        version: { const: PROVIDER_VERSION },
+      },
+    },
+    worker: {
+      type: "object",
+      additionalProperties: false,
+      required: ["source_sha256"],
+      properties: { source_sha256: sha256Schema },
+    },
+    runtime: runtimeSchema,
+    execution_state: { enum: ["completed", "not_converged"] },
+    kinematics_exit: kinematicsExitSchema,
+  },
+} as const;
 const recordViewSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["request", "case_uri", "recorded_at", "observation", "sample_page"],
+  required: [
+    "request",
+    "case_uri",
+    "recorded_at",
+    "receipt",
+    "observation",
+    "sample_page",
+  ],
   properties: {
     request: requestSchema,
     case_uri: caseUriSchema,
     recorded_at: { type: "string" },
+    receipt: receiptSchema,
     observation: observationSummarySchema,
     sample_page: samplePageSchema,
   },
@@ -222,6 +302,7 @@ const manifestSchema = {
     "authority",
     "submission",
     "result_paging",
+    "receipt",
     "agent_workflow",
     "non_claims",
   ],
@@ -254,6 +335,7 @@ const manifestSchema = {
     authority: { const: "explicit mechanics input to factual observations only" },
     submission: { const: SUBMISSION_CONTRACT },
     result_paging: { const: RESULT_PAGING_CONTRACT },
+    receipt: { const: RECEIPT_CONTRACT },
     agent_workflow: { const: AGENT_WORKFLOW },
     non_claims: { const: NON_CLAIMS },
   },
@@ -287,6 +369,20 @@ export const caseSubmitOutputSchema = {
       ok: { const: true },
       case_sha256: sha256Schema,
       case_uri: caseUriSchema,
+    },
+  }, failureSchema],
+} as const;
+
+export const caseGetOutputSchema = {
+  oneOf: [{
+    type: "object",
+    additionalProperties: false,
+    required: ["ok", "case_sha256", "case_uri", "case_json"],
+    properties: {
+      ok: { const: true },
+      case_sha256: sha256Schema,
+      case_uri: caseUriSchema,
+      case_json: { type: "string", maxLength: 512 * 1024 },
     },
   }, failureSchema],
 } as const;
@@ -334,4 +430,13 @@ export const runGetOutputSchema = {
     },
     failureSchema,
   ],
+} as const;
+
+export const receiptGetOutputSchema = {
+  oneOf: [{
+    type: "object",
+    additionalProperties: false,
+    required: ["ok", "record"],
+    properties: { ok: { const: true }, record: recordViewSchema },
+  }, failureSchema],
 } as const;
