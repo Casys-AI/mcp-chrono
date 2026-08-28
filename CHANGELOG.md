@@ -15,6 +15,9 @@
   linux/amd64 Docker runtime is Deno 2.9.6, pinned by OCI digest; release CI selects the
   exact `v2.9.6` toolchain tag. This does not retroactively assert that identity for 0.2
   or 0.3.0 data.
+- Published JSR `@casys/mcp-chrono@0.3.1` and the public Linux/amd64 OCI index
+  `sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c` after the
+  native smoke, notice and SBOM gates passed.
 
 ## 0.3.0 — 2026-08-28
 
