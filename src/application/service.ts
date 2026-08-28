@@ -4,6 +4,7 @@ import { MAX_CASE_JSON_BYTES } from "../domain/contract.ts";
 import { type SamplePageRequest, toRunRecordView } from "../domain/result-view.ts";
 import { requireSha256, sha256Utf8 } from "../domain/sha.ts";
 import type {
+  AttestedRunRecordView,
   PrescribedKinematicsCase,
   RunExecution,
   RunLookup,
@@ -11,6 +12,7 @@ import type {
   RunRecord,
   RunRecordView,
   RunRequest,
+  StoredRunRecord,
 } from "../domain/types.ts";
 import { validateCase } from "../domain/validate.ts";
 import { FileChronoStore } from "./store.ts";
@@ -24,7 +26,7 @@ export interface CaseSubmission {
 }
 export interface RunResult {
   replayed: boolean;
-  record: RunRecord;
+  record: StoredRunRecord;
 }
 export const CASE_URI_PREFIX = "chrono-case:sha256:";
 const defaultTimeout = 15_000;
@@ -164,7 +166,18 @@ export class ChronoService {
       ? { state: "recorded", record: toRunRecordView(found.record, page) }
       : found;
   }
-  viewRecord(record: RunRecord, page: SamplePageRequest = {}): RunRecordView {
+  viewRecord(
+    record: RunRecord,
+    page?: SamplePageRequest,
+  ): AttestedRunRecordView;
+  viewRecord(
+    record: StoredRunRecord,
+    page?: SamplePageRequest,
+  ): RunRecordView;
+  viewRecord(
+    record: StoredRunRecord,
+    page: SamplePageRequest = {},
+  ): RunRecordView {
     return toRunRecordView(record, page);
   }
   async readCase(sha256: string): Promise<CaseSubmission & { case_json: string }> {
@@ -178,7 +191,7 @@ export class ChronoService {
   async lookupReceiptView(
     receiptSha256: string,
     page: SamplePageRequest = {},
-  ): Promise<RunRecordView> {
+  ): Promise<AttestedRunRecordView> {
     return this.viewRecord(await this.store.lookupReceipt(receiptSha256), page);
   }
   private async reopenValidatedCase(sha256: string): Promise<PrescribedKinematicsCase> {

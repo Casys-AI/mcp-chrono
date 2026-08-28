@@ -1,0 +1,57 @@
+{
+  "request": {
+    "request_id": "legacy-0.2-fixture",
+    "case_sha256": "d1fe228e17437a8c16452f57de0802325dedcbd42c857df5b83481b9c882c17c",
+    "timeout_ms": 15000
+  },
+  "case_uri": "chrono-case:sha256:d1fe228e17437a8c16452f57de0802325dedcbd42c857df5b83481b9c882c17c",
+  "recorded_at": "2026-08-28T00:00:00.000Z",
+  "output": {
+    "engine": { "name": "Project Chrono", "version": "10.0.0" },
+    "samples": [
+      {
+        "time_s": 0,
+        "bodies": [
+          { "id": "root", "position_m": [0, 0, 0], "rotation_wxyz": [1, 0, 0, 0] },
+          { "id": "arm", "position_m": [0, 0, 1], "rotation_wxyz": [1, 0, 0, 0] }
+        ],
+        "motors": [
+          {
+            "joint_id": "hinge",
+            "declared_limit_observation": "within",
+            "translation_residual_m": [0, 0, 0],
+            "rotation_quaternion_imag_residual": [0, 0, 0]
+          }
+        ]
+      },
+      {
+        "time_s": 1,
+        "bodies": [
+          { "id": "root", "position_m": [0, 0, 0], "rotation_wxyz": [1, 0, 0, 0] },
+          { "id": "arm", "position_m": [0, 0, 1], "rotation_wxyz": [1, 0, 0, 0] }
+        ],
+        "motors": [
+          {
+            "joint_id": "hinge",
+            "declared_limit_observation": "within",
+            "translation_residual_m": [0, 0, 0],
+            "rotation_quaternion_imag_residual": [0, 0, 0]
+          }
+        ]
+      }
+    ],
+    "not_evaluated": [
+      "collision",
+      "clearance",
+      "contact",
+      "forces",
+      "torques",
+      "dynamics",
+      "strength",
+      "safety",
+      "product fitness"
+    ],
+    "execution_state": "completed",
+    "kinematics_exit": { "raw_code": 1, "raw_name": "SUCCESS" }
+  }
+}

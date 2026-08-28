@@ -5,7 +5,8 @@ aggregate distribution and must not be described as MIT-only.
 
 The image contains these directly selected components:
 
-- Deno `2.9.2`, copied from the digest-pinned `denoland/deno:bin-2.9.2` image.
+- Deno `2.9.6`, copied from the linux/amd64 digest-pinned `denoland/deno:bin-2.9.6`
+  image.
 - micromamba, supplied by the digest-pinned `mambaorg/micromamba` base image.
 - Project Chrono `10.0.0=py312h14c7f5c_0` and PyChrono `10.0.0=py312h3a49c4c_0`, from
   conda-forge. Their resolver metadata declares BSD 3-Clause.

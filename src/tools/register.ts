@@ -168,7 +168,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_prescribed_kinematics",
     description:
-      "Run a previously submitted explicit case once for a request identity. Return a bounded sample page only; an uncertain intent is never rerun automatically.",
+      "Run a previously submitted explicit case once for a request identity. Return a bounded sample page only; an exact legacy-0.2 record is replayed without rerun and is explicitly unattested. An uncertain intent is never rerun automatically.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -212,7 +212,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_get",
     description:
-      "Read a recorded run summary plus one bounded sample page, or its literal uncertain/absent state. Advance sample_offset while sample_page.has_more is true.",
+      "Read a recorded run summary plus one bounded sample page, including explicitly unattested legacy-0.2 records, or its literal uncertain/absent state. Advance sample_offset while sample_page.has_more is true.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -243,7 +243,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_receipt_get",
     description:
-      "Read a recorded run by its canonical receipt SHA-256. Return factual receipt provenance plus one bounded sample page; advance sample_offset while sample_page.has_more is true.",
+      "Read a 0.3+ recorded run by its canonical receipt SHA-256. Legacy-0.2 records have no derivable receipt identity and remain available only by request identity. Return factual receipt provenance plus one bounded sample page; advance sample_offset while sample_page.has_more is true.",
     inputSchema: {
       type: "object",
       additionalProperties: false,

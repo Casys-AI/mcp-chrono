@@ -1,0 +1,33 @@
+{
+  "schema_id": "chrono-prescribed-kinematics-case/1.0",
+  "units": { "length": "m", "angle": "rad", "time": "s" },
+  "frame": { "handedness": "right" },
+  "bodies": [
+    {
+      "id": "root",
+      "fixed": true,
+      "absolute_com_pose": { "position_m": [0, 0, 0], "rotation_wxyz": [1, 0, 0, 0] }
+    },
+    {
+      "id": "arm",
+      "fixed": false,
+      "absolute_com_pose": { "position_m": [0, 0, 1], "rotation_wxyz": [1, 0, 0, 0] }
+    }
+  ],
+  "joints": [
+    {
+      "id": "hinge",
+      "parent_body": "root",
+      "child_body": "arm",
+      "absolute_joint_frame": {
+        "position_m": [0, 0, 0],
+        "rotation_wxyz": [1, 0, 0, 0]
+      },
+      "angle_ramp": { "initial_angle_rad": 0, "angular_speed_rad_s": 0.5 },
+      "limits_rad": [-1, 1]
+    }
+  ],
+  "duration_s": 1,
+  "step_s": 0.1,
+  "sample_every_steps": 1
+}

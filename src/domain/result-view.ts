@@ -5,12 +5,15 @@ import {
 } from "./contract.ts";
 import { ChronoError } from "./errors.ts";
 import type {
+  AttestedRunRecordView,
   KinematicsSample,
+  LegacyKinematicsSample,
+  LegacyRunObservation,
   RunObservation,
-  RunRecord,
   RunRecordView,
-  SamplePage,
+  StoredRunRecord,
 } from "./types.ts";
+import { isAttestedRunRecord } from "./types.ts";
 
 export interface SamplePageRequest {
   sample_offset?: unknown;
@@ -45,10 +48,17 @@ export function normalizeSamplePageRequest(
   return { sample_offset, sample_limit };
 }
 
-function samplePage(
-  samples: KinematicsSample[],
+function samplePage<T>(
+  samples: T[],
   request: SamplePageRequest,
-): SamplePage {
+): {
+  offset: number;
+  limit: number;
+  total: number;
+  returned: number;
+  has_more: boolean;
+  samples: T[];
+} {
   const { sample_offset, sample_limit } = normalizeSamplePageRequest(request);
   const pageSamples = samples.slice(sample_offset, sample_offset + sample_limit);
   return {
@@ -61,7 +71,7 @@ function samplePage(
   };
 }
 
-function summary(output: RunObservation): RunRecordView["observation"] {
+function summary(output: RunObservation): AttestedRunRecordView["observation"] {
   const first = output.samples[0];
   const last = output.samples.at(-1);
   if (!first || !last) {
@@ -77,6 +87,23 @@ function summary(output: RunObservation): RunRecordView["observation"] {
     sample_time_range_s: { first: first.time_s, last: last.time_s },
   };
 }
+function legacySummary(
+  output: LegacyRunObservation,
+): Extract<RunRecordView, { provenance: unknown }>["observation"] {
+  const first = output.samples[0];
+  const last = output.samples.at(-1);
+  if (!first || !last) {
+    throw new ChronoError("store_corrupt", "Legacy observation has no samples.");
+  }
+  return {
+    engine: output.engine,
+    execution_state: output.execution_state,
+    kinematics_exit: output.kinematics_exit,
+    not_evaluated: output.not_evaluated,
+    sample_count: output.samples.length,
+    sample_time_range_s: { first: first.time_s, last: last.time_s },
+  };
+}
 
 /**
  * Build the only MCP result shape for recorded observations. The durable ledger
@@ -84,15 +111,25 @@ function summary(output: RunObservation): RunRecordView["observation"] {
  * their context or a transport response.
  */
 export function toRunRecordView(
-  record: RunRecord,
+  record: StoredRunRecord,
   request: SamplePageRequest = {},
 ): RunRecordView {
+  if (!isAttestedRunRecord(record)) {
+    return {
+      request: record.request,
+      case_uri: record.case_uri,
+      recorded_at: record.recorded_at,
+      provenance: record.provenance,
+      observation: legacySummary(record.output),
+      sample_page: samplePage<LegacyKinematicsSample>(record.output.samples, request),
+    };
+  }
   return {
     request: record.request,
     case_uri: record.case_uri,
     recorded_at: record.recorded_at,
     receipt: record.receipt,
     observation: summary(record.output),
-    sample_page: samplePage(record.output.samples, request),
+    sample_page: samplePage<KinematicsSample>(record.output.samples, request),
   };
 }

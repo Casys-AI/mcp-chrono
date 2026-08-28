@@ -15,7 +15,12 @@ Deno.test("release pins and package version stay explicit", async () => {
   );
   assert(
     dockerfile.includes(
-      "denoland/deno:bin-2.9.2@sha256:5ab209e42a062db554ebc7598409b4a43467d7911e2cdee6176a0b4efc67738f",
+      "denoland/deno:bin-2.9.6@sha256:456e1a0fada18d727c3f38eb4937218c1b46924c832b713dcf9358eb32ff15a6",
+    ),
+  );
+  assert(
+    dockerfile.includes(
+      "deno eval 'console.log(Deno.version.deno)'",
     ),
   );
   assert(
@@ -127,7 +132,7 @@ Deno.test("release pins and package version stay explicit", async () => {
       `CPU-only lock includes ${forbiddenPackagePrefix}`,
     );
   }
-  assertEquals(deno.version, "0.3.0");
+  assertEquals(deno.version, "0.3.1");
   assertEquals(deno.exports, {
     ".": "./mod.ts",
     "./server": "./server.ts",

@@ -86,6 +86,12 @@ const runtimeSchema = {
     python_version: { type: "string", pattern: "^\\d+\\.\\d+\\.\\d+$" },
   },
 } as const;
+const serverRuntimeSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["deno_version"],
+  properties: { deno_version: { type: "string", pattern: "^\\d+\\.\\d+\\.\\d+$" } },
+} as const;
 const kinematicsExitSchema = {
   type: "object",
   additionalProperties: false,
@@ -101,6 +107,15 @@ const kinematicsExitSchema = {
     { properties: { raw_code: { const: 3 }, raw_name: { const: "RELTOL_UPDATE" } } },
     { properties: { raw_code: { const: 4 }, raw_name: { const: "ABSTOL_UPDATE" } } },
   ],
+} as const;
+const legacyKinematicsExitSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["raw_code", "raw_name"],
+  properties: {
+    raw_code: { anyOf: [{ type: "integer" }, { type: "null" }] },
+    raw_name: { anyOf: [{ type: "string" }, { type: "null" }] },
+  },
 } as const;
 const requestSchema = {
   type: "object",
@@ -141,6 +156,23 @@ const motorObservationSchema = {
     rotation_quaternion_imag_residual: vector3Schema,
   },
 } as const;
+const legacyMotorObservationSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "joint_id",
+    "declared_limit_observation",
+    "translation_residual_m",
+    "rotation_quaternion_imag_residual",
+  ],
+  properties: {
+    joint_id: { type: "string" },
+    motor_angle_rad: { type: "number" },
+    declared_limit_observation: { enum: ["below", "within", "above"] },
+    translation_residual_m: vector3Schema,
+    rotation_quaternion_imag_residual: vector3Schema,
+  },
+} as const;
 const sampleSchema = {
   type: "object",
   additionalProperties: false,
@@ -149,6 +181,16 @@ const sampleSchema = {
     time_s: { type: "number" },
     bodies: { type: "array", items: bodyObservationSchema },
     motors: { type: "array", items: motorObservationSchema },
+  },
+} as const;
+const legacySampleSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["time_s", "bodies", "motors"],
+  properties: {
+    time_s: { type: "number" },
+    bodies: { type: "array", items: bodyObservationSchema },
+    motors: { type: "array", items: legacyMotorObservationSchema },
   },
 } as const;
 const observationSummarySchema = {
@@ -203,58 +245,116 @@ const samplePageSchema = {
     samples: { type: "array", maxItems: 64, items: sampleSchema },
   },
 } as const;
-const receiptSchema = {
+const legacySamplePageSchema = {
   type: "object",
   additionalProperties: false,
-  required: [
-    "schema_id",
-    "receipt_sha256",
-    "case_sha256",
-    "outcome_sha256",
-    "request_id",
-    "recorded_at",
-    "package",
-    "provider",
-    "worker",
-    "runtime",
-    "execution_state",
-    "kinematics_exit",
-  ],
+  required: ["offset", "limit", "total", "returned", "has_more", "samples"],
   properties: {
-    schema_id: { const: RECEIPT_SCHEMA_ID },
-    receipt_sha256: sha256Schema,
-    case_sha256: sha256Schema,
-    outcome_sha256: sha256Schema,
-    request_id: requestIdSchema,
-    recorded_at: { type: "string" },
-    package: {
-      type: "object",
-      additionalProperties: false,
-      required: ["name", "version"],
-      properties: {
-        name: { const: "@casys/mcp-chrono" },
-        version: { const: PROVIDER_VERSION },
-      },
-    },
-    provider: {
-      type: "object",
-      additionalProperties: false,
-      required: ["name", "version"],
-      properties: {
-        name: { const: "casys-chrono" },
-        version: { const: PROVIDER_VERSION },
-      },
-    },
-    worker: {
-      type: "object",
-      additionalProperties: false,
-      required: ["source_sha256"],
-      properties: { source_sha256: sha256Schema },
-    },
-    runtime: runtimeSchema,
-    execution_state: { enum: ["completed", "not_converged"] },
-    kinematics_exit: kinematicsExitSchema,
+    offset: { type: "integer", minimum: 0, maximum: 511 },
+    limit: { type: "integer", minimum: 1, maximum: 64 },
+    total: { type: "integer", minimum: 1, maximum: 512 },
+    returned: { type: "integer", minimum: 0, maximum: 64 },
+    has_more: { type: "boolean" },
+    samples: { type: "array", maxItems: 64, items: legacySampleSchema },
   },
+} as const;
+const receiptProperties = {
+  schema_id: { const: RECEIPT_SCHEMA_ID },
+  receipt_sha256: sha256Schema,
+  case_sha256: sha256Schema,
+  outcome_sha256: sha256Schema,
+  request_id: requestIdSchema,
+  recorded_at: { type: "string" },
+  worker: {
+    type: "object",
+    additionalProperties: false,
+    required: ["source_sha256"],
+    properties: { source_sha256: sha256Schema },
+  },
+  runtime: runtimeSchema,
+  execution_state: { enum: ["completed", "not_converged"] },
+  kinematics_exit: kinematicsExitSchema,
+} as const;
+const receiptSchema = {
+  oneOf: [{
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "schema_id",
+      "receipt_sha256",
+      "case_sha256",
+      "outcome_sha256",
+      "request_id",
+      "recorded_at",
+      "package",
+      "provider",
+      "worker",
+      "runtime",
+      "server_runtime",
+      "execution_state",
+      "kinematics_exit",
+    ],
+    properties: {
+      package: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "version"],
+        properties: {
+          name: { const: "@casys/mcp-chrono" },
+          version: { const: PROVIDER_VERSION },
+        },
+      },
+      provider: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "version"],
+        properties: {
+          name: { const: "casys-chrono" },
+          version: { const: PROVIDER_VERSION },
+        },
+      },
+      ...receiptProperties,
+      server_runtime: serverRuntimeSchema,
+    },
+  }, {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "schema_id",
+      "receipt_sha256",
+      "case_sha256",
+      "outcome_sha256",
+      "request_id",
+      "recorded_at",
+      "package",
+      "provider",
+      "worker",
+      "runtime",
+      "execution_state",
+      "kinematics_exit",
+    ],
+    properties: {
+      package: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "version"],
+        properties: {
+          name: { const: "@casys/mcp-chrono" },
+          version: { const: "0.3.0" },
+        },
+      },
+      provider: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "version"],
+        properties: {
+          name: { const: "casys-chrono" },
+          version: { const: "0.3.0" },
+        },
+      },
+      ...receiptProperties,
+    },
+  }],
 } as const;
 const recordViewSchema = {
   type: "object",
@@ -275,6 +375,86 @@ const recordViewSchema = {
     observation: observationSummarySchema,
     sample_page: samplePageSchema,
   },
+} as const;
+const legacyProvenanceSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["persistence_format", "attestation", "receipt", "unavailable"],
+  properties: {
+    persistence_format: { const: "legacy-0.2" },
+    attestation: { const: "unattested" },
+    receipt: { const: "unavailable" },
+    unavailable: {
+      const: [
+        "receipt_sha256",
+        "outcome_sha256",
+        "package",
+        "provider",
+        "worker",
+        "runtime",
+      ],
+    },
+  },
+} as const;
+const legacyObservationSummarySchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "engine",
+    "execution_state",
+    "kinematics_exit",
+    "not_evaluated",
+    "sample_count",
+    "sample_time_range_s",
+  ],
+  properties: {
+    engine: engineSchema,
+    execution_state: { enum: ["completed", "not_converged"] },
+    kinematics_exit: legacyKinematicsExitSchema,
+    not_evaluated: {
+      const: [
+        "collision",
+        "clearance",
+        "contact",
+        "forces",
+        "torques",
+        "dynamics",
+        "strength",
+        "safety",
+        "product fitness",
+      ],
+    },
+    sample_count: { type: "integer", minimum: 1, maximum: 512 },
+    sample_time_range_s: {
+      type: "object",
+      additionalProperties: false,
+      required: ["first", "last"],
+      properties: { first: { type: "number" }, last: { type: "number" } },
+    },
+  },
+} as const;
+const legacyRecordViewSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "request",
+    "case_uri",
+    "recorded_at",
+    "provenance",
+    "observation",
+    "sample_page",
+  ],
+  properties: {
+    request: requestSchema,
+    case_uri: caseUriSchema,
+    recorded_at: { type: "string" },
+    provenance: legacyProvenanceSchema,
+    observation: legacyObservationSummarySchema,
+    sample_page: legacySamplePageSchema,
+  },
+} as const;
+const recordReadViewSchema = {
+  oneOf: [recordViewSchema, legacyRecordViewSchema],
 } as const;
 const intentSchema = {
   type: "object",
@@ -395,7 +575,7 @@ export const runOutputSchema = {
     properties: {
       ok: { const: true },
       replayed: { type: "boolean" },
-      record: recordViewSchema,
+      record: recordReadViewSchema,
     },
   }, failureSchema],
 } as const;
@@ -409,7 +589,7 @@ export const runGetOutputSchema = {
       properties: {
         ok: { const: true },
         state: { const: "recorded" },
-        record: recordViewSchema,
+        record: recordReadViewSchema,
       },
     },
     {

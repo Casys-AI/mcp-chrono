@@ -46,6 +46,19 @@ export async function sha256CanonicalJson(value: unknown): Promise<string> {
 
 type ReceiptPreimage = Omit<RunReceipt, "receipt_sha256">;
 
+function identityFromReceipt(receipt: RunReceipt): Pick<
+  RunReceipt,
+  "package" | "provider" | "server_runtime"
+> {
+  return {
+    package: receipt.package,
+    provider: receipt.provider,
+    ...(receipt.server_runtime === undefined
+      ? {}
+      : { server_runtime: receipt.server_runtime }),
+  };
+}
+
 function preimage(
   caseSha256: string,
   request: RunRequest,
@@ -53,6 +66,7 @@ function preimage(
   output: RunObservation,
   worker: WorkerIdentity,
   outcomeSha256: string,
+  identity: Pick<RunReceipt, "package" | "provider" | "server_runtime">,
 ): ReceiptPreimage {
   return {
     schema_id: RECEIPT_SCHEMA_ID,
@@ -60,10 +74,13 @@ function preimage(
     outcome_sha256: outcomeSha256,
     request_id: request.request_id,
     recorded_at: recordedAt,
-    package: { name: "@casys/mcp-chrono", version: PROVIDER_VERSION },
-    provider: { name: "casys-chrono", version: PROVIDER_VERSION },
+    package: identity.package,
+    provider: identity.provider,
     worker,
     runtime: output.runtime,
+    ...(identity.server_runtime === undefined
+      ? {}
+      : { server_runtime: identity.server_runtime }),
     execution_state: output.execution_state,
     kinematics_exit: output.kinematics_exit,
   };
@@ -84,6 +101,11 @@ export async function createRunReceipt(
     output,
     worker,
     outcome_sha256,
+    {
+      package: { name: "@casys/mcp-chrono", version: PROVIDER_VERSION },
+      provider: { name: "casys-chrono", version: PROVIDER_VERSION },
+      server_runtime: { deno_version: Deno.version.deno },
+    },
   );
   return { ...content, receipt_sha256: await sha256CanonicalJson(content) };
 }
@@ -109,6 +131,7 @@ export async function verifyRunReceipt(
     output,
     receipt.worker,
     outcomeSha256,
+    identityFromReceipt(receipt),
   );
   if (receipt.receipt_sha256 !== await sha256CanonicalJson(content)) {
     throw new ChronoError("persisted_ledger_invalid", "Receipt SHA-256 is invalid.");

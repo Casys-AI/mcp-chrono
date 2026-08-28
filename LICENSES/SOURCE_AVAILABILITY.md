@@ -7,7 +7,7 @@ the components selected directly by this repository:
 | Component | Exact release or inventory | Source |
 | --- | --- | --- |
 | Casys MCP Chrono | OCI revision label and Git tag | <https://github.com/Casys-AI/mcp-chrono> |
-| Deno | `v2.9.2` | <https://github.com/denoland/deno/tree/v2.9.2> |
+| Deno | `v2.9.6` | <https://github.com/denoland/deno/tree/v2.9.6> |
 | micromamba | `2.3.1` | <https://github.com/mamba-org/mamba/tree/2.3.1> |
 | micromamba Docker base | digest pinned in `Dockerfile`, generated from `v2.3.1` | <https://github.com/mamba-org/micromamba-docker/tree/v2.3.1> |
 | Project Chrono and PyChrono | `10.0.0` | <https://github.com/projectchrono/chrono/tree/10.0.0> |

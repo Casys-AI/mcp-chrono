@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # linux/amd64 is intentional: this release image is a fixed native-engine target.
-FROM --platform=linux/amd64 denoland/deno:bin-2.9.2@sha256:5ab209e42a062db554ebc7598409b4a43467d7911e2cdee6176a0b4efc67738f AS deno
+FROM --platform=linux/amd64 denoland/deno:bin-2.9.6@sha256:456e1a0fada18d727c3f38eb4937218c1b46924c832b713dcf9358eb32ff15a6 AS deno
 FROM --platform=linux/amd64 mambaorg/micromamba@sha256:2681c45bf145f9b292fc26120646125586a2be4289eda48ce8a94ae2b22eda67
 
 LABEL org.opencontainers.image.title="Casys MCP Chrono" \
@@ -25,7 +25,8 @@ COPY deno.json deno.lock mod.ts server.ts ./
 COPY locks ./locks
 COPY src ./src
 COPY scripts ./scripts
-RUN ! grep -E 'package=(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|libegl|libopengl|opengl|xorg-|font-|fonts-|qt|vtk|irrlicht)' /app/locks/pychrono-linux-64.explicit.txt \
+RUN test "$(deno eval 'console.log(Deno.version.deno)')" = "2.9.6" \
+ && ! grep -E 'package=(cuda|cudnn|libcu|mkl|intel-mkl|mpi|openmpi|mpich|libgl|libegl|libopengl|opengl|xorg-|font-|fonts-|qt|vtk|irrlicht)' /app/locks/pychrono-linux-64.explicit.txt \
  && micromamba install --yes --name base --file /app/locks/pychrono-linux-64.explicit.txt \
  && "$CHRONO_PYTHON" -c 'import json; pychrono_metadata = json.load(open("/opt/conda/conda-meta/pychrono-10.0.0-py312h3a49c4c_0.json", encoding="utf-8")); chrono_metadata = json.load(open("/opt/conda/conda-meta/chrono-10.0.0-py312h14c7f5c_0.json", encoding="utf-8")); assert pychrono_metadata["name"] == "pychrono"; assert pychrono_metadata["version"] == "10.0.0"; assert pychrono_metadata["build"] == "py312h3a49c4c_0"; assert chrono_metadata["name"] == "chrono"; assert chrono_metadata["version"] == "10.0.0"; assert chrono_metadata["build"] == "py312h14c7f5c_0"' \
  && test -d /opt/conda/share/chrono/data \

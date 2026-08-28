@@ -135,6 +135,7 @@ assert len(receipt["outcome_sha256"]) == 64, receipt
 assert len(receipt["receipt_sha256"]) == 64, receipt
 assert len(receipt["worker"]["source_sha256"]) == 64, receipt
 assert receipt["runtime"] == output["runtime"], receipt
+assert receipt["server_runtime"] == {"deno_version": "2.9.6"}, receipt
 assert receipt["execution_state"] == output["execution_state"], receipt
 assert receipt["kinematics_exit"] == output["kinematics_exit"], receipt
 receipt_readback = rpc(9, "chrono_run_receipt_get", {

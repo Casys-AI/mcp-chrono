@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.1 — 2026-08-28
+
+- Restored truthful read compatibility for an exact pre-receipt 0.2 durable request
+  record. It keeps the original request, case and observation replayable by request ID
+  and case SHA-256, while exposing `legacy-0.2`, `unattested` and `unavailable`
+  provenance instead of synthesizing a receipt, outcome digest, package/provider, worker
+  or runtime identity. Malformed near-legacy records remain corrupt.
+- Kept receipt-index recovery strictly limited to attested 0.3 records, including an
+  existing valid 0.3.0 record whose index is absent after an interrupted write. Legacy
+  records are never rewritten or indexed because the required identity facts are not
+  derivable from their bytes.
+- New 0.3.1 receipts identify the actual server Deno runtime that created them. The
+  linux/amd64 Docker runtime is Deno 2.9.6, pinned by OCI digest; release CI selects the
+  exact `v2.9.6` toolchain tag. This does not retroactively assert that identity for 0.2
+  or 0.3.0 data.
+
 ## 0.3.0 — 2026-08-28
 
 - Added a canonical, content-addressed prescribed-kinematics receipt. It binds the exact

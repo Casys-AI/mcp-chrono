@@ -20,11 +20,11 @@ interface StdioResponse {
   readonly error?: Record<string, unknown>;
 }
 
-async function start() {
+async function start(storeRoot?: string) {
   const listener = Deno.listen({ hostname: "127.0.0.1", port: 0 });
   const port = (listener.addr as Deno.NetAddr).port;
   listener.close();
-  const store = new FileChronoStore(await Deno.makeTempDir());
+  const store = new FileChronoStore(storeRoot ?? await Deno.makeTempDir());
   const runner = new FakeRunner();
   const app = createChronoApp(new ChronoService(store, runner));
   return {
@@ -38,6 +38,29 @@ async function start() {
       onListen: () => {},
     }),
   };
+}
+
+async function materializeLegacyFixture(root: string): Promise<{
+  case_json: string;
+  case_sha256: string;
+  request_id: string;
+}> {
+  const fixture = new URL("./fixtures/legacy-0.2/", import.meta.url);
+  const case_json = await Deno.readTextFile(new URL("case.json", fixture));
+  const record = JSON.parse(
+    await Deno.readTextFile(new URL("record.json", fixture)),
+  ) as { request: { request_id: string } };
+  const case_sha256 = await sha256Utf8(case_json);
+  await Deno.mkdir(`${root}/cases`, { recursive: true });
+  await Deno.mkdir(`${root}/requests/${record.request.request_id}`, {
+    recursive: true,
+  });
+  await Deno.writeTextFile(`${root}/cases/${case_sha256}.json`, case_json);
+  await Deno.writeTextFile(
+    `${root}/requests/${record.request.request_id}/record.json`,
+    JSON.stringify(record),
+  );
+  return { case_json, case_sha256, request_id: record.request.request_id };
 }
 async function rpc(
   port: number,
@@ -92,8 +115,9 @@ function modernStdioRequest(
 
 async function exchangeStdio(
   requests: ReadonlyArray<Record<string, unknown>>,
+  existingStoreRoot?: string,
 ): Promise<Map<number, StdioResponse>> {
-  const storeRoot = await Deno.makeTempDir();
+  const storeRoot = existingStoreRoot ?? await Deno.makeTempDir();
   const child = new Deno.Command(Deno.execPath(), {
     args: ["run", "-A", "server.ts", "--stdio"],
     cwd: new URL("..", import.meta.url).pathname,
@@ -133,7 +157,9 @@ async function exchangeStdio(
     }
     return responses;
   } finally {
-    await Deno.remove(storeRoot, { recursive: true });
+    if (existingStoreRoot === undefined) {
+      await Deno.remove(storeRoot, { recursive: true });
+    }
   }
 }
 
@@ -298,6 +324,7 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     assertEquals(receipt.case_sha256, sha);
     assertEquals((receipt.outcome_sha256 as string).length, 64);
     assertEquals((receipt.receipt_sha256 as string).length, 64);
+    assertEquals(receipt.server_runtime, { deno_version: Deno.version.deno });
     assertEquals((record.observation as Record<string, unknown>).runtime, {
       binding: "pychrono",
       python_version: "3.12.0",
@@ -326,6 +353,60 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     assertEquals((receiptRecord.sample_page as Record<string, unknown>).has_more, true);
   } finally {
     await http.shutdown();
+  }
+});
+Deno.test("HTTP readback preserves exact legacy 0.2 data without a receipt", async () => {
+  const storeRoot = await Deno.makeTempDir();
+  const fixture = await materializeLegacyFixture(storeRoot);
+  const { port, http, runner } = await start(storeRoot);
+  try {
+    const caseReadback = await rpc(port, 1, "tools/call", {
+      name: "chrono_case_get",
+      arguments: { case_sha256: fixture.case_sha256 },
+    });
+    assertEquals(
+      (caseReadback.result?.structuredContent as Record<string, unknown>).case_json,
+      fixture.case_json,
+    );
+    const lookup = await rpc(port, 2, "tools/call", {
+      name: "chrono_run_get",
+      arguments: { request_id: fixture.request_id },
+    });
+    const record = (lookup.result?.structuredContent as Record<string, unknown>)
+      .record as Record<string, unknown>;
+    assertEquals(record.receipt, undefined);
+    assertEquals(record.provenance, {
+      persistence_format: "legacy-0.2",
+      attestation: "unattested",
+      receipt: "unavailable",
+      unavailable: [
+        "receipt_sha256",
+        "outcome_sha256",
+        "package",
+        "provider",
+        "worker",
+        "runtime",
+      ],
+    });
+    assertEquals(
+      (record.observation as Record<string, unknown>).runtime,
+      undefined,
+    );
+    const replay = await rpc(port, 3, "tools/call", {
+      name: "chrono_run_prescribed_kinematics",
+      arguments: {
+        request_id: fixture.request_id,
+        case_sha256: fixture.case_sha256,
+      },
+    });
+    assertEquals(
+      (replay.result?.structuredContent as Record<string, unknown>).replayed,
+      true,
+    );
+    assertEquals(runner.calls, 0);
+  } finally {
+    await http.shutdown();
+    await Deno.remove(storeRoot, { recursive: true });
   }
 });
 Deno.test("stdio subprocess returns a structured modern discovery identity", async () => {
@@ -426,6 +507,61 @@ Deno.test("stdio subprocess stores and rereads exact case bytes", async () => {
     (missingReceipt.error as Record<string, unknown>).code,
     "receipt_not_found",
   );
+});
+
+Deno.test("stdio readback preserves exact legacy 0.2 data without a receipt", async () => {
+  const storeRoot = await Deno.makeTempDir();
+  const fixture = await materializeLegacyFixture(storeRoot);
+  try {
+    const responses = await exchangeStdio([
+      modernStdioRequest(1, "tools/call", {
+        name: "chrono_case_get",
+        arguments: { case_sha256: fixture.case_sha256 },
+      }),
+      modernStdioRequest(2, "tools/call", {
+        name: "chrono_run_get",
+        arguments: { request_id: fixture.request_id },
+      }),
+      modernStdioRequest(3, "tools/call", {
+        name: "chrono_run_prescribed_kinematics",
+        arguments: {
+          request_id: fixture.request_id,
+          case_sha256: fixture.case_sha256,
+        },
+      }),
+    ], storeRoot);
+    const caseReadback = responses.get(1)?.result?.structuredContent as Record<
+      string,
+      unknown
+    >;
+    assertEquals(caseReadback.case_json, fixture.case_json);
+    const lookup = responses.get(2)?.result?.structuredContent as Record<
+      string,
+      unknown
+    >;
+    const record = lookup.record as Record<string, unknown>;
+    assertEquals(record.receipt, undefined);
+    assertEquals(record.provenance, {
+      persistence_format: "legacy-0.2",
+      attestation: "unattested",
+      receipt: "unavailable",
+      unavailable: [
+        "receipt_sha256",
+        "outcome_sha256",
+        "package",
+        "provider",
+        "worker",
+        "runtime",
+      ],
+    });
+    const replay = responses.get(3)?.result?.structuredContent as Record<
+      string,
+      unknown
+    >;
+    assertEquals(replay.replayed, true);
+  } finally {
+    await Deno.remove(storeRoot, { recursive: true });
+  }
 });
 
 Deno.test("native CLI rejects mixed and unknown transport arguments", async () => {

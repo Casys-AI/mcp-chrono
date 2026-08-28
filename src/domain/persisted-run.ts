@@ -2,14 +2,21 @@ import { ChronoError } from "./errors.ts";
 import { verifyRunReceipt } from "./receipt.ts";
 import { requireSha256 } from "./sha.ts";
 import type {
+  LegacyRecordProvenance,
+  LegacyRunObservation,
   PrescribedKinematicsCase,
   RunIntent,
   RunObservation,
   RunReceipt,
-  RunRecord,
   RunRequest,
+  StoredRunRecord,
 } from "./types.ts";
-import { PROVIDER_VERSION, RECEIPT_SCHEMA_ID } from "./types.ts";
+import {
+  LEGACY_RECORD_UNAVAILABLE,
+  PROVIDER_VERSION,
+  RECEIPT_SCHEMA_ID,
+  SUPPORTED_ATTESTED_RECORD_VERSIONS,
+} from "./types.ts";
 
 const REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const NOT_EVALUATED = [
@@ -42,9 +49,14 @@ function object(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 function exactKeys(value: Record<string, unknown>, keys: readonly string[]): void {
-  if (
-    Object.keys(value).length !== keys.length || keys.some((key) => !(key in value))
-  ) invalid("Unexpected persisted object shape.");
+  if (!hasExactKeys(value, keys)) invalid("Unexpected persisted object shape.");
+}
+function hasExactKeys(
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean {
+  return Object.keys(value).length === keys.length &&
+    keys.every((key) => key in value);
 }
 function finite(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
@@ -229,9 +241,129 @@ function observation(value: unknown, input: PrescribedKinematicsCase): RunObserv
   };
 }
 
-function receipt(value: unknown): RunReceipt {
+/** Validate the pre-receipt 0.2 output exactly as its durable contract allowed. */
+function legacyObservation(
+  value: unknown,
+  input: PrescribedKinematicsCase,
+): LegacyRunObservation {
   const raw = object(value);
   exactKeys(raw, [
+    "engine",
+    "samples",
+    "not_evaluated",
+    "execution_state",
+    "kinematics_exit",
+  ]);
+  const engine = object(raw.engine);
+  exactKeys(engine, ["name", "version"]);
+  if (engine.name !== "Project Chrono" || engine.version !== "10.0.0") {
+    invalid("Persisted legacy engine identity is invalid.");
+  }
+  if (
+    !Array.isArray(raw.not_evaluated) ||
+    raw.not_evaluated.length !== NOT_EVALUATED.length ||
+    raw.not_evaluated.some((entry, index) => entry !== NOT_EVALUATED[index])
+  ) invalid("Persisted legacy non-evaluation boundary is invalid.");
+  if (raw.execution_state !== "completed" && raw.execution_state !== "not_converged") {
+    invalid("Persisted legacy execution state is invalid.");
+  }
+  const exit = object(raw.kinematics_exit);
+  exactKeys(exit, ["raw_code", "raw_name"]);
+  if (
+    exit.raw_code !== null &&
+    (!Number.isInteger(exit.raw_code) || !Number.isFinite(exit.raw_code))
+  ) invalid("Persisted legacy exit code is invalid.");
+  if (exit.raw_name !== null && typeof exit.raw_name !== "string") {
+    invalid("Persisted legacy exit name is invalid.");
+  }
+  if (
+    (raw.execution_state === "not_converged") !== (exit.raw_name === "NOT_CONVERGED")
+  ) invalid("Persisted legacy execution state contradicts exit state.");
+  if (
+    !Array.isArray(raw.samples) || raw.samples.length < 1 || raw.samples.length > 512
+  ) invalid("Persisted legacy sample count is invalid.");
+  let previous = -1;
+  for (const sampleValue of raw.samples) {
+    const sample = object(sampleValue);
+    exactKeys(sample, ["time_s", "bodies", "motors"]);
+    const time = finite(sample.time_s);
+    if (!(time > previous)) invalid("Persisted legacy sample times are not ordered.");
+    previous = time;
+    if (
+      !Array.isArray(sample.bodies) || sample.bodies.length !== input.bodies.length ||
+      !Array.isArray(sample.motors) || sample.motors.length !== input.joints.length
+    ) invalid("Persisted legacy sample cardinality is invalid.");
+    sample.bodies.forEach((bodyValue, index) => {
+      const body = object(bodyValue);
+      exactKeys(body, ["id", "position_m", "rotation_wxyz"]);
+      if (body.id !== input.bodies[index].id) {
+        invalid("Persisted legacy body identity is invalid.");
+      }
+      tuple(body.position_m, 3);
+      const rotation = tuple(body.rotation_wxyz, 4);
+      if (Math.abs(Math.hypot(...rotation) - 1) > 1e-5) {
+        invalid("Persisted legacy body rotation is invalid.");
+      }
+    });
+    sample.motors.forEach((motorValue, index) => {
+      const motor = object(motorValue);
+      const allowed = [
+        "joint_id",
+        "declared_limit_observation",
+        "translation_residual_m",
+        "rotation_quaternion_imag_residual",
+        "motor_angle_rad",
+      ];
+      if (
+        Object.keys(motor).some((key) => !allowed.includes(key)) ||
+        [
+          "joint_id",
+          "declared_limit_observation",
+          "translation_residual_m",
+          "rotation_quaternion_imag_residual",
+        ].some((key) => !(key in motor))
+      ) invalid("Persisted legacy motor shape is invalid.");
+      if (
+        motor.joint_id !== input.joints[index].id ||
+        !["below", "within", "above"].includes(
+          motor.declared_limit_observation as string,
+        )
+      ) invalid("Persisted legacy motor identity is invalid.");
+      tuple(motor.translation_residual_m, 3);
+      tuple(motor.rotation_quaternion_imag_residual, 3);
+      if (motor.motor_angle_rad !== undefined) finite(motor.motor_angle_rad);
+    });
+  }
+  if ((raw.samples[0] as Record<string, unknown>).time_s !== 0) {
+    invalid("Persisted legacy samples must begin at t=0.");
+  }
+  if (
+    raw.execution_state === "completed" && Math.abs(previous - input.duration_s) > 1e-9
+  ) invalid("Persisted legacy completed run lacks final sample.");
+  return {
+    engine: { name: "Project Chrono", version: "10.0.0" },
+    samples: raw.samples as LegacyRunObservation["samples"],
+    not_evaluated: NOT_EVALUATED,
+    execution_state: raw.execution_state,
+    kinematics_exit: {
+      raw_code: exit.raw_code as number | null,
+      raw_name: exit.raw_name as string | null,
+    },
+  };
+}
+
+function legacyProvenance(): LegacyRecordProvenance {
+  return {
+    persistence_format: "legacy-0.2",
+    attestation: "unattested",
+    receipt: "unavailable",
+    unavailable: LEGACY_RECORD_UNAVAILABLE,
+  };
+}
+
+function receipt(value: unknown): RunReceipt {
+  const raw = object(value);
+  const receiptKeys = [
     "schema_id",
     "receipt_sha256",
     "case_sha256",
@@ -244,7 +376,15 @@ function receipt(value: unknown): RunReceipt {
     "runtime",
     "execution_state",
     "kinematics_exit",
+  ] as const;
+  const hasLegacyAttestedShape = hasExactKeys(raw, receiptKeys);
+  const hasCurrentAttestedShape = hasExactKeys(raw, [
+    ...receiptKeys,
+    "server_runtime",
   ]);
+  if (!hasLegacyAttestedShape && !hasCurrentAttestedShape) {
+    invalid("Persisted receipt has an invalid shape.");
+  }
   if (raw.schema_id !== RECEIPT_SCHEMA_ID) {
     invalid("Persisted receipt schema is invalid.");
   }
@@ -258,12 +398,21 @@ function receipt(value: unknown): RunReceipt {
   exactKeys(providerIdentity, ["name", "version"]);
   if (
     packageIdentity.name !== "@casys/mcp-chrono" ||
-    packageIdentity.version !== PROVIDER_VERSION ||
     providerIdentity.name !== "casys-chrono" ||
-    providerIdentity.version !== PROVIDER_VERSION
+    typeof packageIdentity.version !== "string" ||
+    packageIdentity.version !== providerIdentity.version ||
+    !SUPPORTED_ATTESTED_RECORD_VERSIONS.includes(
+      packageIdentity.version as (typeof SUPPORTED_ATTESTED_RECORD_VERSIONS)[number],
+    )
   ) invalid("Persisted receipt package identity is invalid.");
   const worker = object(raw.worker);
   exactKeys(worker, ["source_sha256"]);
+  const server_runtime = packageIdentity.version === PROVIDER_VERSION
+    ? serverRuntime(raw.server_runtime)
+    : undefined;
+  if (
+    (packageIdentity.version === PROVIDER_VERSION) !== hasCurrentAttestedShape
+  ) invalid("Persisted receipt server runtime identity is invalid.");
   const execution_state = raw.execution_state === "completed" ||
       raw.execution_state === "not_converged"
     ? raw.execution_state
@@ -282,18 +431,41 @@ function receipt(value: unknown): RunReceipt {
     outcome_sha256: requireSha256(raw.outcome_sha256),
     request_id,
     recorded_at: timestamp(raw.recorded_at),
-    package: { name: "@casys/mcp-chrono", version: PROVIDER_VERSION },
-    provider: { name: "casys-chrono", version: PROVIDER_VERSION },
+    package: {
+      name: "@casys/mcp-chrono",
+      version: packageIdentity
+        .version as (typeof SUPPORTED_ATTESTED_RECORD_VERSIONS)[number],
+    },
+    provider: {
+      name: "casys-chrono",
+      version: providerIdentity
+        .version as (typeof SUPPORTED_ATTESTED_RECORD_VERSIONS)[number],
+    },
     worker: { source_sha256: requireSha256(worker.source_sha256) },
     runtime: runtime(raw.runtime),
+    ...(server_runtime === undefined ? {} : { server_runtime }),
     execution_state,
     kinematics_exit: { raw_code: exit.raw_code, raw_name: exit.raw_name },
   };
 }
 
+function serverRuntime(value: unknown): NonNullable<RunReceipt["server_runtime"]> {
+  const raw = object(value);
+  exactKeys(raw, ["deno_version"]);
+  if (
+    typeof raw.deno_version !== "string" || !/^\d+\.\d+\.\d+$/.test(raw.deno_version)
+  ) {
+    invalid("Persisted server runtime identity is invalid.");
+  }
+  return { deno_version: raw.deno_version };
+}
+
 export function persistedRecordCaseSha256(value: unknown, requestedId: string): string {
   const raw = object(value);
-  exactKeys(raw, ["request", "case_uri", "recorded_at", "output", "receipt"]);
+  if (
+    !hasExactKeys(raw, ["request", "case_uri", "recorded_at", "output", "receipt"]) &&
+    !hasExactKeys(raw, ["request", "case_uri", "recorded_at", "output"])
+  ) invalid("Unexpected persisted record shape.");
   return request(raw.request, requestedId).case_sha256;
 }
 export function validatePersistedIntent(
@@ -316,14 +488,26 @@ export async function validatePersistedRecord(
   value: unknown,
   requestedId: string,
   input: PrescribedKinematicsCase,
-): Promise<RunRecord> {
+): Promise<StoredRunRecord> {
   const raw = object(value);
-  exactKeys(raw, ["request", "case_uri", "recorded_at", "output", "receipt"]);
+  const legacy = hasExactKeys(raw, ["request", "case_uri", "recorded_at", "output"]);
+  if (!legacy) {
+    exactKeys(raw, ["request", "case_uri", "recorded_at", "output", "receipt"]);
+  }
   const parsedRequest = request(raw.request, requestedId);
   if (raw.case_uri !== `${CASE_URI_PREFIX}${parsedRequest.case_sha256}`) {
     invalid("Persisted record URI is inconsistent.");
   }
   const recorded_at = timestamp(raw.recorded_at);
+  if (legacy) {
+    return {
+      request: parsedRequest,
+      case_uri: raw.case_uri as string,
+      recorded_at,
+      output: legacyObservation(raw.output, input),
+      provenance: legacyProvenance(),
+    };
+  }
   const output = observation(raw.output, input);
   const parsedReceipt = receipt(raw.receipt);
   if (

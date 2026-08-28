@@ -1,9 +1,9 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. Version **0.3.0** is published on JSR and as a
-public Linux/amd64 OCI image after the source, native smoke, notice and SBOM gates
-passed:
+kinematics using Project Chrono 10.0.0. The already-published **0.3.0** release is on
+JSR and as a public Linux/amd64 OCI image after the source, native smoke, notice and
+SBOM gates passed:
 
 ```text
 ghcr.io/casys-ai/mcp-chrono@sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c
@@ -13,6 +13,16 @@ The immutable version tag is `ghcr.io/casys-ai/mcp-chrono:0.3.0`, and the publis
 entry point is `jsr:@casys/mcp-chrono@0.3.0/server`. The checked-in operator Compose
 fallback is deliberately not advanced by this documentation-only change; set
 `CHRONO_IMAGE` to the qualified digest above for an explicit 0.3.0 deployment upgrade.
+
+Version 0.3.1 is an upgrade reader for persistent `/data` volumes. It recognizes only
+the exact 0.2 request-record shape and preserves its original request, case and output
+for `chrono_case_get`, `chrono_run_get` and request-ID replay. Its bounded result labels
+that data `legacy-0.2`, `unattested` and receipt `unavailable`; it does not fabricate a
+receipt, outcome SHA-256, package/provider, worker or runtime identity. In particular,
+`chrono_run_receipt_get` has no legacy lookup identity. A near-legacy or malformed
+record is still corrupt, and legacy bytes are neither rewritten nor indexed. Valid 0.3.0
+receipts remain verifiable and can repair a missing receipt index because that successor
+mapping is derivable from their original receipt identity.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -67,17 +77,19 @@ published atomically with its ledger binding and output; its canonical receipt i
 then published from that immutable record. The receipt binds the case identity, outcome
 SHA-256, package/provider/worker/runtime identities and literal execution state. A crash
 between those two publications is repaired from the request record on the next request
-identity lookup, without rerunning native Chrono. Retrying a recorded request reuses
-that record; using its request ID for another case is a conflict. A persisted intent
-without a result is returned as literal `uncertain` and is never automatically rerun.
+identity lookup, without rerunning native Chrono. This repair applies only to attested
+0.3 records; exact legacy 0.2 records have no receipt identity to derive. Retrying a
+recorded request reuses that record; using its request ID for another case is a
+conflict. A persisted intent without a result is returned as literal `uncertain` and is
+never automatically rerun.
 
 Run and readback responses expose an observation summary plus one `sample_page`, never
 the full stored observation. Omit page arguments for the first 16 samples, or set
 `sample_offset` and `sample_limit` (1–64) and continue while `has_more` is true.
 `chrono_run_get` exposes recorded, uncertain or absent state through the same bounded
 view. `chrono_case_get` rereads exact stored case bytes by case SHA-256;
-`chrono_run_receipt_get` rereads a recorded run by receipt SHA-256 through the same
-bounded page contract. These are identity readbacks, not dynamic MCP resources.
+`chrono_run_receipt_get` rereads an attested recorded run by receipt SHA-256 through the
+same bounded page contract. These are identity readbacks, not dynamic MCP resources.
 
 Tool output is structured and error payloads use stable codes such as `case_invalid`,
 `case_sha256_mismatch`, `invalid_sample_offset`, `invalid_sample_limit`,
@@ -155,11 +167,16 @@ HTTP process requires the framework's static token configuration `MCP_AUTH_TOKEN
 
 ## Docker and VPS deployment
 
-The Dockerfile is a linux/amd64 image. It pins the Deno and micromamba bases by digest,
-uses `deno.lock` with `--frozen`, and installs the CPU-only SHA-256-pinned Conda
+The Dockerfile is a linux/amd64 image. It pins Deno **2.9.6** and micromamba bases by
+digest, uses `deno.lock` with `--frozen`, and installs the CPU-only SHA-256-pinned Conda
 transaction in `locks/pychrono-linux-64.explicit.txt`. The lock excludes CUDA, MKL, MPI,
 OpenGL/X11, VTK and Irrlicht package families. Runtime uses cached Deno dependencies and
 the exact verified interpreter `/opt/conda/bin/python`.
+
+Every new 0.3.1 receipt contains the actual server `server_runtime.deno_version` that
+created it. The published linux/amd64 image is expected to report `2.9.6`; source runs
+record their own Deno version. This is runtime provenance for the receipt, not a claim
+about an older record whose bytes did not contain it.
 
 The container is intentionally network-facing only through an in-image bearer-token
 proxy. It refuses to start unless `MCP_BEARER_TOKEN` is non-empty; the Deno MCP process
