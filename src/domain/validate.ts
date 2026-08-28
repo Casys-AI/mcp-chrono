@@ -262,7 +262,7 @@ export function validateCase(value: unknown): PrescribedKinematicsCase {
     );
   }
   if (Math.floor(duration_s / step_s) / (raw.sample_every_steps as number) + 2 > 512) {
-    throw new ChronoError("case_invalid", "Requested returned samples exceed 512.");
+    throw new ChronoError("case_invalid", "Requested stored samples exceed 512.");
   }
   return {
     schema_id: CASE_SCHEMA_ID,

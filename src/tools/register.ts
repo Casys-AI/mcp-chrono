@@ -1,20 +1,46 @@
 import { type McpApp, type StructuredToolResult } from "@casys/mcp-server";
 import { ChronoService } from "../application/service.ts";
+import {
+  AGENT_WORKFLOW,
+  CASE_INVARIANTS,
+  CASE_JSON_SCHEMA,
+  CASE_TEMPLATE,
+  DEFAULT_SAMPLE_PAGE_LIMIT,
+  INPUT_POSE_SEMANTICS,
+  MAX_CASE_JSON_BYTES,
+  MAX_SAMPLE_PAGE_LIMIT,
+  MAX_SAMPLE_PAGE_OFFSET,
+  NON_CLAIMS,
+  RESULT_PAGING_CONTRACT,
+  SUBMISSION_CONTRACT,
+} from "../domain/contract.ts";
 import { errorResult } from "../domain/errors.ts";
+import { normalizeSamplePageRequest } from "../domain/result-view.ts";
 import { PROVIDER_VERSION, type RunRequest } from "../domain/types.ts";
+import {
+  caseSubmitOutputSchema,
+  manifestOutputSchema,
+  runGetOutputSchema,
+  runOutputSchema,
+  templateOutputSchema,
+} from "./schemas.ts";
 
 const objectSchema = { type: "object", additionalProperties: false } as const;
-const failureSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["ok", "error"],
-  properties: { ok: { const: false }, error: { type: "object" } },
-} as const;
 type ToolFailure = {
   content: [{ type: "text"; text: string }];
   structuredContent: Record<string, unknown>;
   isError: true;
 };
+const samplePageProperties = {
+  sample_offset: {
+    description:
+      `Zero-based stored sample offset; the handler requires a safe integer from 0 through ${MAX_SAMPLE_PAGE_OFFSET}. Omit for the first bounded result page.`,
+  },
+  sample_limit: {
+    description:
+      `Maximum samples in this response; the handler requires a safe integer from 1 through ${MAX_SAMPLE_PAGE_LIMIT}. Omit for ${DEFAULT_SAMPLE_PAGE_LIMIT}.`,
+  },
+} as const;
 function success(
   content: string,
   structuredContent: Record<string, unknown>,
@@ -35,14 +61,9 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
     {
       name: "chrono_manifest_get",
       description:
-        "Return the provider identity, strict case contract, factual-output boundary, and non-claims.",
+        "Read first: return the complete 1.0 case JSON Schema, exact template, SI units, server invariants, result paging contract, and factual-output boundary.",
       inputSchema: objectSchema,
-      outputSchema: {
-        type: "object",
-        required: ["ok", "manifest"],
-        properties: { ok: { const: true }, manifest: { type: "object" } },
-        additionalProperties: false,
-      },
+      outputSchema: manifestOutputSchema,
     },
     () =>
       success("Chrono prescribed-kinematics provider manifest.", {
@@ -51,56 +72,63 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
           name: "@casys/mcp-chrono",
           version: PROVIDER_VERSION,
           case_schema_id: "chrono-prescribed-kinematics-case/1.0",
-          input_pose_semantics:
-            "absolute_com_pose and absolute_joint_frame are absolute zero-angle references; t=0 is observed after assembly applies initial_angle_rad and may differ.",
+          case_contract: {
+            json_schema: CASE_JSON_SCHEMA,
+            example_case: CASE_TEMPLATE,
+            invariants: CASE_INVARIANTS,
+          },
+          input_pose_semantics: INPUT_POSE_SEMANTICS,
           engine: { name: "Project Chrono", required_version: "10.0.0" },
           units: { length: "m", angle: "rad", time: "s" },
           frame: "right-handed",
           authority: "explicit mechanics input to factual observations only",
-          non_claims: [
-            "joint inference",
-            "axis inference",
-            "frame inference",
-            "unit inference",
-            "STEP interpretation",
-            "collision",
-            "clearance",
-            "contact",
-            "forces",
-            "torques",
-            "dynamics",
-            "strength",
-            "safety",
-            "product pass/fail",
-          ],
+          submission: SUBMISSION_CONTRACT,
+          result_paging: RESULT_PAGING_CONTRACT,
+          agent_workflow: AGENT_WORKFLOW,
+          non_claims: NON_CLAIMS,
         },
+      }),
+  );
+  app.registerTool(
+    {
+      name: "chrono_case_template_get",
+      description:
+        "Return a non-executing valid 1.0 revolute-ramp case template and its server-enforced invariants. Use it to construct an explicit case; it neither stores nor runs anything.",
+      inputSchema: objectSchema,
+      outputSchema: templateOutputSchema,
+    },
+    () =>
+      success("Non-executing Chrono 1.0 case template.", {
+        ok: true,
+        case_schema_id: CASE_JSON_SCHEMA.$id,
+        example_case: CASE_TEMPLATE,
+        invariants: CASE_INVARIANTS,
       }),
   );
   app.registerTool({
     name: "chrono_case_submit",
     description:
-      "Validate and immutably store exact explicit prescribed-kinematics case JSON under its SHA-256 identity.",
+      "Validate and immutably store exact explicit prescribed-kinematics case JSON. case_sha256 is an optional expected digest; the server always returns its computed content identity.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
-      required: ["case_json", "case_sha256"],
+      required: ["case_json"],
       properties: {
-        case_json: { type: "string", maxLength: 524288 },
-        case_sha256: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        case_json: {
+          type: "string",
+          maxLength: MAX_CASE_JSON_BYTES,
+          description:
+            "Exact UTF-8 JSON text for the closed 1.0 case, at most 524288 bytes (512 KiB).",
+        },
+        case_sha256: {
+          type: "string",
+          pattern: "^[a-f0-9]{64}$",
+          description:
+            "Optional expected SHA-256 of exact case_json UTF-8 bytes. A mismatch fails closed and returns the server-computed digest in error details.",
+        },
       },
     },
-    outputSchema: {
-      oneOf: [{
-        type: "object",
-        additionalProperties: false,
-        required: ["ok", "case_sha256", "case_uri"],
-        properties: {
-          ok: { const: true },
-          case_sha256: { type: "string" },
-          case_uri: { type: "string" },
-        },
-      }, failureSchema],
-    },
+    outputSchema: caseSubmitOutputSchema,
   }, async (args) => {
     try {
       const result = await service.submit(args.case_json, args.case_sha256);
@@ -115,7 +143,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_prescribed_kinematics",
     description:
-      "Run a previously submitted explicit case once for a request identity; an uncertain intent is never rerun automatically.",
+      "Run a previously submitted explicit case once for a request identity. Return a bounded sample page only; an uncertain intent is never rerun automatically.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -130,28 +158,27 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
         case_sha256: { type: "string", pattern: "^[a-f0-9]{64}$" },
         case_uri: { type: "string", pattern: "^chrono-case:sha256:[a-f0-9]{64}$" },
         timeout_ms: { type: "integer", minimum: 100, maximum: 60000 },
+        ...samplePageProperties,
       },
     },
-    outputSchema: {
-      oneOf: [{
-        type: "object",
-        additionalProperties: false,
-        required: ["ok", "replayed", "record"],
-        properties: {
-          ok: { const: true },
-          replayed: { type: "boolean" },
-          record: { type: "object" },
-        },
-      }, failureSchema],
-    },
+    outputSchema: runOutputSchema,
   }, async (args) => {
     try {
-      const result = await service.run(args as unknown as RunRequest);
+      const { sample_offset, sample_limit, ...request } = args as Record<
+        string,
+        unknown
+      >;
+      const page = normalizeSamplePageRequest({ sample_offset, sample_limit });
+      const result = await service.run(request as unknown as RunRequest);
       return success(
         result.replayed
-          ? "Recorded run result replayed exactly."
-          : "Prescribed-kinematics observation recorded.",
-        { ok: true, ...result },
+          ? "Recorded run result replayed exactly as a bounded result page."
+          : "Prescribed-kinematics observation recorded with a bounded result page.",
+        {
+          ok: true,
+          replayed: result.replayed,
+          record: service.viewRecord(result.record, page),
+        },
       );
     } catch (error) {
       return failure(error);
@@ -160,7 +187,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_get",
     description:
-      "Read a recorded run result or its literal uncertain intent state by request identity.",
+      "Read a recorded run summary plus one bounded sample page, or its literal uncertain/absent state. Advance sample_offset while sample_page.has_more is true.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -172,27 +199,17 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
           maxLength: 128,
           pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$",
         },
+        ...samplePageProperties,
       },
     },
-    outputSchema: {
-      oneOf: [
-        {
-          type: "object",
-          additionalProperties: false,
-          required: ["ok", "state"],
-          properties: {
-            ok: { const: true },
-            state: { enum: ["recorded", "uncertain", "absent"] },
-            record: { type: "object" },
-            intent: { type: "object" },
-          },
-        },
-        failureSchema,
-      ],
-    },
+    outputSchema: runGetOutputSchema,
   }, async (args) => {
     try {
-      const found = await service.lookup(args.request_id as string);
+      const page = normalizeSamplePageRequest({
+        sample_offset: args.sample_offset,
+        sample_limit: args.sample_limit,
+      });
+      const found = await service.lookupView(args.request_id as string, page);
       return success(`Run state: ${found.state}.`, { ok: true, ...found });
     } catch (error) {
       return failure(error);

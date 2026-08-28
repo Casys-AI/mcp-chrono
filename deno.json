@@ -1,7 +1,10 @@
 {
   "name": "@casys/mcp-chrono",
-  "version": "0.1.0",
-  "exports": "./mod.ts",
+  "version": "0.2.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./server": "./server.ts"
+  },
   "imports": {
     "@casys/mcp-server": "jsr:@casys/mcp-server@0.26.1",
     "@std/assert": "jsr:@std/assert@1.0.14"

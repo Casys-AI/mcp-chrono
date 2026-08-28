@@ -42,10 +42,10 @@ export const oneJointCase = (): PrescribedKinematicsCase => ({
   step_s: 0.1,
   sample_every_steps: 1,
 });
-export const observation = (): RunObservation => ({
+export const observation = (sampleCount = 2): RunObservation => ({
   engine: { name: "Project Chrono", version: "10.0.0" },
-  samples: [0, 1].map((time_s) => ({
-    time_s,
+  samples: Array.from({ length: sampleCount }, (_, index) => ({
+    time_s: sampleCount === 1 ? 0 : index / (sampleCount - 1),
     bodies: [{
       id: "root",
       position_m: [0, 0, 0],
@@ -103,8 +103,9 @@ export const workerObservation = (
 });
 export class FakeRunner {
   calls = 0;
+  constructor(private readonly output: RunObservation = observation()) {}
   run(): Promise<RunObservation> {
     this.calls++;
-    return Promise.resolve(observation());
+    return Promise.resolve(this.output);
   }
 }

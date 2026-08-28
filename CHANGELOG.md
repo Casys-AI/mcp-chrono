@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0 — 2026-08-28
+
+- Added a complete runtime case contract: structural JSON Schema, valid non-executing
+  template, fixed units, server-validated invariants and an agent workflow in
+  `chrono_manifest_get`; `chrono_case_template_get` exposes the template directly.
+- Made `chrono_case_submit.case_sha256` optional. The provider now computes and returns
+  the authoritative digest; a supplied expected digest still fails closed on mismatch
+  and reports the actual digest for recovery.
+- Replaced full observation payloads on MCP run/readback with a factual summary and a
+  deterministic bounded sample page. The complete observation remains in the durable
+  request ledger.
+- Kept the mechanics case at `chrono-prescribed-kinematics-case/1.0`: explicit revolute
+  angle ramps only. Prismatic joints, other profiles, contact, forces and dynamics are
+  not added by this release candidate.
+
 ## 0.1.0 — 2026-08-27
 
 - Replaced the native lock with a CPU-only conda-forge transaction pinned to the exact

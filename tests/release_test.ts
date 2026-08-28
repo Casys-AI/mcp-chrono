@@ -7,6 +7,7 @@ async function text(path: string) {
 Deno.test("release pins and package version stay explicit", async () => {
   const dockerfile = await text("Dockerfile");
   const deno = JSON.parse(await text("deno.json"));
+  const citation = await text("CITATION.cff");
   assert(
     dockerfile.includes(
       "mambaorg/micromamba@sha256:2681c45bf145f9b292fc26120646125586a2be4289eda48ce8a94ae2b22eda67",
@@ -126,7 +127,12 @@ Deno.test("release pins and package version stay explicit", async () => {
       `CPU-only lock includes ${forbiddenPackagePrefix}`,
     );
   }
-  assertEquals(deno.version, "0.1.0");
+  assertEquals(deno.version, "0.2.0");
+  assertEquals(deno.exports, {
+    ".": "./mod.ts",
+    "./server": "./server.ts",
+  });
+  assert(citation.includes(`version: "${deno.version}"`));
   const types = await text("src/domain/types.ts");
   assert(types.includes('CHRONO_VERSION = "10.0.0"'));
   assert(types.includes(`PROVIDER_VERSION = "${deno.version}"`));
@@ -145,6 +151,7 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const envExample = await text("deploy/.env.example");
   const publicImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da";
+  const releaseImage = "ghcr.io/casys-ai/mcp-chrono:0.2.0";
   assert(release.includes("refs/tags/v"));
   assert(!release.includes(":latest"));
   assert(release.includes('test "$GITHUB_REF_NAME" = "v$version"'));
@@ -226,11 +233,17 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(readme.includes("CHRONO_GHCR_RELEASE_ENABLED"));
   assert(readme.includes("CHRONO_JSR_RELEASE_ENABLED"));
   assert(readme.replaceAll(/\s+/g, " ").includes("explicitly authorized"));
-  assert(readme.includes(publicImage));
+  assert(readme.includes(releaseImage));
+  assert(readme.includes("jsr:@casys/mcp-chrono@0.2.0/server --stdio"));
+  assert(readme.includes("chrono_case_template_get"));
+  assert(readme.includes("sample_offset"));
   assert(compose.includes(publicImage));
   assert(envExample.includes(publicImage));
   assert(!readme.includes("GHCR publication is still pending"));
   assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
+  assert(dockerSmoke.includes('["record"]["observation"]'));
+  assert(dockerSmoke.includes('["record"]["sample_page"]'));
+  assert(!dockerSmoke.includes('["record"]["output"]'));
   assert(dockerSmoke.includes('"initial_angle_rad": 0.5'));
   assert(dockerSmoke.includes("[math.cos(0.5), math.sin(0.5), 0]"));
   assert(

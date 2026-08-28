@@ -1,16 +1,17 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. Version **0.1.0** is published as a public
-Linux/amd64 image at `ghcr.io/casys-ai/mcp-chrono:0.1.0`. Production deployments should
-pin the immutable release digest:
+kinematics using Project Chrono 10.0.0. This release is **0.2.0**. Its tag workflow
+publishes the matching JSR package and public Linux/amd64 image only after the source,
+native smoke, notices and SBOM gates pass:
 
 ```text
-ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da
+ghcr.io/casys-ai/mcp-chrono:0.2.0
 ```
 
-The JSR package is registered to this repository but does not yet carry a published
-version.
+The version tag is immutable. Resolve it to its published digest before a production
+deployment; the operator compose manifest remains on the prior qualified digest until
+that explicit upgrade.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -24,6 +25,10 @@ bodies with absolute zero-angle reference CoM poses, one fixed root, and an expl
 connected acyclic tree of revolute angle motors. Each joint includes an absolute
 zero-angle reference joint frame whose local +Z is the positive rotation axis, a ramp
 and declared angular limits.
+
+Version 1.0 has only those revolute angle motors and the linear
+`angle(t) = initial_angle_rad + angular_speed_rad_s * t` profile. It has no prismatic
+joints, non-linear profiles, contact, force or dynamics contract.
 
 The JSON field names remain literal: `absolute_com_pose` and `absolute_joint_frame`
 describe the absolute reference configuration at motor angle zero. The worker then
@@ -43,36 +48,46 @@ particular, an observed declared-limit relation is not a product verdict.
 
 ## Contract
 
-`chrono_case_submit` takes `case_json` as an exact UTF-8 string and its lower-case
-`case_sha256`. The digest is recomputed and the JSON is validated before an immutable
-write. Its identity is `chrono-case:sha256:<hex>`.
+Read `chrono_manifest_get` before constructing a case. Its structured result carries the
+complete `chrono-prescribed-kinematics-case/1.0` JSON Schema, SI units, cross-field
+invariants, an exact example and the result-page contract. `chrono_case_template_get`
+returns that non-executing example and its invariants alone.
+
+`chrono_case_submit` takes `case_json` as an exact UTF-8 string. Its lower-case
+`case_sha256` is optional: if supplied, it is an expected digest and a mismatch fails
+before any write. The server always computes and returns the authoritative
+`case_sha256`; mismatch details include `actual_case_sha256` for exact recovery. JSON is
+validated before immutable storage under `chrono-case:sha256:<hex>`.
 
 `chrono_run_prescribed_kinematics` takes a bounded safe `request_id`, case SHA-256, an
 optional matching case URI and a bounded timeout. It reopens and rehashes exact stored
 bytes before execution. Intent is persisted first. A successful run is stored atomically
 as one record containing both its request ledger binding and output. Retrying a recorded
-request returns that exact record; using its request ID for another case is a conflict.
-A persisted intent without a result is returned as literal `uncertain` and is never
+request reuses that record; using its request ID for another case is a conflict. A
+persisted intent without a result is returned as literal `uncertain` and is never
 automatically rerun.
 
-`chrono_run_get` exposes recorded, uncertain or absent state. The provider uses
-identity-bound URIs and readback rather than pretending that dynamic case or run
-resources have been registered.
+Run and readback responses expose an observation summary plus one `sample_page`, never
+the full stored observation. Omit page arguments for the first 16 samples, or set
+`sample_offset` and `sample_limit` (1–64) and continue while `has_more` is true.
+`chrono_run_get` exposes recorded, uncertain or absent state through the same bounded
+view. The provider uses identity-bound URIs and readback rather than pretending that
+dynamic case or run resources have been registered.
 
-`chrono_manifest_get` documents the provider identity and boundary at runtime. Tool
-output is structured and error payloads use stable codes such as `case_invalid`,
-`case_sha256_mismatch`, `request_conflict`, `run_uncertain`, `runner_timeout` and
-`worker_failed`.
+Tool output is structured and error payloads use stable codes such as `case_invalid`,
+`case_sha256_mismatch`, `invalid_sample_offset`, `invalid_sample_limit`,
+`request_conflict`, `run_uncertain`, `runner_timeout` and `worker_failed`.
 
 The HTTP integration uses the Casys MCP dialect implemented by the framework: protocol
 version `2026-07-28` and its `server/discover` discovery exchange before a client
 selects a registered method. This is a framework transport convention, not a claim that
 this provider implements OAuth discovery or issues OAuth tokens.
 
-The hard input limits are: at most 16 bodies; at most 15 joints; duration `> 0` and
-`<= 10` seconds; positive step; at most 10,000 integration steps; positive
-`sample_every_steps`; and no more than 512 returned samples. Objects reject unspecified
-properties throughout.
+The hard input limits are: `case_json` at most 524288 UTF-8 bytes (512 KiB); at most 16
+bodies; at most 15 joints; unique body IDs and unique joint IDs; duration `> 0` and
+`<= 10` seconds; positive step; at most 10,000 integration steps; positive safe-integer
+`sample_every_steps`; and no more than 512 stored samples. MCP readback is separately
+bounded to a maximum 64-sample page. Objects reject unspecified properties throughout.
 
 ## Quick start
 
@@ -80,7 +95,7 @@ The public container is the recommended runtime path. Create a long random beare
 keep the service on host loopback, and preserve `/data`:
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da
+docker pull ghcr.io/casys-ai/mcp-chrono:0.2.0
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -88,7 +103,7 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono@sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da
+  ghcr.io/casys-ai/mcp-chrono:0.2.0
 ```
 
 The MCP endpoint is `http://127.0.0.1:3025/mcp`. Requests must carry the same value as
@@ -101,6 +116,12 @@ as shown below.
 Source execution is primarily for contributors and audits. It requires Python with
 **exactly** `pychrono` / Project Chrono 10.0.0. Normal tests use an injected fake runner
 and do not assert native execution.
+
+With that exact native runtime available, the pinned JSR server entry point is:
+
+```sh
+deno run -A jsr:@casys/mcp-chrono@0.2.0/server --stdio
+```
 
 ```sh
 deno task check

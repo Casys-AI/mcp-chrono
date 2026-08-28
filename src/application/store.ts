@@ -152,8 +152,8 @@ export class FileChronoStore {
     if (actual !== hash) {
       throw new ChronoError(
         "case_sha256_mismatch",
-        "Declared case_sha256 does not match the submitted UTF-8 bytes.",
-        { declared: hash, observed: actual },
+        "Expected case_sha256 does not match the submitted UTF-8 bytes.",
+        { expected_case_sha256: hash, actual_case_sha256: actual },
       );
     }
     const outcome = await publishNew(this.casesDir(), `${hash}.json`, bytes);

@@ -1,10 +1,14 @@
 import { ChronoError } from "../domain/errors.ts";
+import { MAX_CASE_JSON_BYTES } from "../domain/contract.ts";
+import { type SamplePageRequest, toRunRecordView } from "../domain/result-view.ts";
 import { requireSha256, sha256Utf8 } from "../domain/sha.ts";
 import type {
   PrescribedKinematicsCase,
   RunLookup,
+  RunLookupView,
   RunObservation,
   RunRecord,
+  RunRecordView,
   RunRequest,
 } from "../domain/types.ts";
 import { validateCase } from "../domain/validate.ts";
@@ -28,25 +32,29 @@ export class ChronoService {
     private readonly store: FileChronoStore,
     private readonly runner: ChronoRunner,
   ) {}
-  async submit(caseJson: unknown, declaredSha256: unknown): Promise<CaseSubmission> {
+  async submit(caseJson: unknown, expectedSha256?: unknown): Promise<CaseSubmission> {
     if (typeof caseJson !== "string") {
       throw new ChronoError(
         "invalid_case_json",
         "case_json must be an exact UTF-8 JSON string.",
       );
     }
-    if (new TextEncoder().encode(caseJson).byteLength > 512_000) {
+    if (new TextEncoder().encode(caseJson).byteLength > MAX_CASE_JSON_BYTES) {
       throw new ChronoError(
         "case_too_large",
-        "case_json exceeds the 512 KiB input limit.",
+        "case_json exceeds the 512 KiB UTF-8 input limit.",
       );
     }
-    const sha256 = requireSha256(declaredSha256);
-    if (await sha256Utf8(caseJson) !== sha256) {
-      throw new ChronoError(
-        "case_sha256_mismatch",
-        "Declared case_sha256 does not match the submitted UTF-8 bytes.",
-      );
+    const sha256 = await sha256Utf8(caseJson);
+    if (expectedSha256 !== undefined) {
+      const expected = requireSha256(expectedSha256);
+      if (expected !== sha256) {
+        throw new ChronoError(
+          "case_sha256_mismatch",
+          "Expected case_sha256 does not match the submitted UTF-8 bytes.",
+          { expected_case_sha256: expected, actual_case_sha256: sha256 },
+        );
+      }
     }
     let parsed: unknown;
     try {
@@ -137,6 +145,18 @@ export class ChronoService {
   }
   lookup(requestId: string): Promise<RunLookup> {
     return this.store.lookup(requestId);
+  }
+  async lookupView(
+    requestId: string,
+    page: SamplePageRequest = {},
+  ): Promise<RunLookupView> {
+    const found = await this.lookup(requestId);
+    return found.state === "recorded"
+      ? { state: "recorded", record: toRunRecordView(found.record, page) }
+      : found;
+  }
+  viewRecord(record: RunRecord, page: SamplePageRequest = {}): RunRecordView {
+    return toRunRecordView(record, page);
   }
   private async reopenValidatedCase(sha256: string): Promise<PrescribedKinematicsCase> {
     const bytes = await this.store.reopenCase(sha256);

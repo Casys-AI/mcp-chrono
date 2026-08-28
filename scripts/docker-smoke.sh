@@ -116,7 +116,7 @@ run = rpc(2, "chrono_run_prescribed_kinematics", {
 })
 assert run["ok"] is True, run
 assert run["replayed"] is False, run
-output = run["record"]["output"]
+output = run["record"]["observation"]
 assert output["engine"] == {"name": "Project Chrono", "version": "10.0.0"}, output
 assert output["execution_state"] == "completed", output
 assert output["not_evaluated"] == [
@@ -141,7 +141,12 @@ def assert_quaternion_equivalent(actual, expected, tolerance=1e-5):
     dot = sum(value * expected_value for value, expected_value in zip(actual, expected))
     assert abs(abs(dot) - 1.0) <= tolerance, (actual, expected, dot)
 
-samples = output["samples"]
+sample_page = run["record"]["sample_page"]
+samples = sample_page["samples"]
+assert sample_page["offset"] == 0, sample_page
+assert sample_page["total"] == output["sample_count"], (sample_page, output)
+assert sample_page["returned"] == len(samples), sample_page
+assert sample_page["has_more"] is False, sample_page
 assert len(samples) >= 2, samples
 assert_close(samples[0]["time_s"], 0.0)
 assert_close(samples[-1]["time_s"], case["duration_s"])
@@ -216,7 +221,10 @@ zero_angle_reference_run = rpc(7, "chrono_run_prescribed_kinematics", {
     "case_uri": zero_angle_reference_submitted["case_uri"], "timeout_ms": 15000,
 })
 assert zero_angle_reference_run["ok"] is True, zero_angle_reference_run
-zero_angle_reference_t0 = zero_angle_reference_run["record"]["output"]["samples"][0]
+zero_angle_reference_page = zero_angle_reference_run["record"]["sample_page"]
+assert zero_angle_reference_page["offset"] == 0, zero_angle_reference_page
+assert zero_angle_reference_page["has_more"] is False, zero_angle_reference_page
+zero_angle_reference_t0 = zero_angle_reference_page["samples"][0]
 assert_close(zero_angle_reference_t0["time_s"], 0)
 assert_close(zero_angle_reference_t0["motors"][0]["motor_angle_rad"], 0.5)
 assert_vector(
