@@ -6,12 +6,11 @@ publishes the matching JSR package and public Linux/amd64 image only after the s
 native smoke, notices and SBOM gates pass:
 
 ```text
-ghcr.io/casys-ai/mcp-chrono:0.2.0
+ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
 ```
 
-The version tag is immutable. Resolve it to its published digest before a production
-deployment; the operator compose manifest remains on the prior qualified digest until
-that explicit upgrade.
+The immutable version tag is `ghcr.io/casys-ai/mcp-chrono:0.2.0`; the operator compose
+manifest pins the qualified digest above.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -95,7 +94,7 @@ The public container is the recommended runtime path. Create a long random beare
 keep the service on host loopback, and preserve `/data`:
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono:0.2.0
+docker pull ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -103,7 +102,7 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono:0.2.0
+  ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
 ```
 
 The MCP endpoint is `http://127.0.0.1:3025/mcp`. Requests must carry the same value as
@@ -179,7 +178,7 @@ content-addressed cases and request ledger used for idempotency and uncertain-st
 recovery.
 
 `deploy/compose.yaml` is the release operator manifest. It defaults to the immutable
-`0.1.0` digest, keeps `/data` in the named `chrono-data` volume, binds only
+`0.2.0` digest, keeps `/data` in the named `chrono-data` volume, binds only
 `127.0.0.1:3025:3025`, drops capabilities and runs without privilege escalation:
 
 ```sh
@@ -235,7 +234,16 @@ depend on those assets are outside this provider's coverage. This is private
 qualification of the named probe image only; it does not make a package or OCI image
 public, published, or license-cleared.
 
-The public `0.1.0` OCI index is
+The public `0.2.0` OCI index is
+`sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6`; its
+Linux/amd64 runtime manifest is
+`sha256:47921f98f1983bd9911f5c12f2610b8bf5dbc37bc37b4ef032a2684d40d4accd`, plus a
+separate attestation manifest carrying BuildKit SBOM and provenance. Its compressed
+runtime config and layers total 189,740,922 bytes. The release workflow rebuilt it,
+passed the authenticated native smoke and notice checks, and validated the pinned
+Chrono/PyChrono components in the generated SBOM before publishing GHCR and JSR 0.2.0.
+
+The previous public `0.1.0` OCI index is
 `sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da`; its
 Linux/amd64 runtime manifest is
 `sha256:254927f8581e35f8fcc4e83f1fa92ec218e3c0d21e54dc0436651704bae6b7d6` and its

@@ -14,6 +14,9 @@
 - Kept the mechanics case at `chrono-prescribed-kinematics-case/1.0`: explicit revolute
   angle ramps only. Prismatic joints, other profiles, contact, forces and dynamics are
   not added by this release candidate.
+- Published JSR 0.2.0 and the public Linux/amd64 image at immutable OCI index
+  `sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6` after the
+  native smoke, notice and SBOM gates passed.
 
 ## 0.1.0 — 2026-08-27
 
