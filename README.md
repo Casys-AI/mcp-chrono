@@ -1,16 +1,18 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. This source tree prepares **0.3.0** and is not,
-by itself, a published JSR package or OCI release. The public 0.2.0 Linux/amd64 image
-was published only after the source, native smoke, notices and SBOM gates passed:
+kinematics using Project Chrono 10.0.0. Version **0.3.0** is published on JSR and as a
+public Linux/amd64 OCI image after the source, native smoke, notice and SBOM gates
+passed:
 
 ```text
-ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
+ghcr.io/casys-ai/mcp-chrono@sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c
 ```
 
-The immutable version tag is `ghcr.io/casys-ai/mcp-chrono:0.2.0`; the operator compose
-manifest pins the qualified digest above.
+The immutable version tag is `ghcr.io/casys-ai/mcp-chrono:0.3.0`, and the published JSR
+entry point is `jsr:@casys/mcp-chrono@0.3.0/server`. The checked-in operator Compose
+fallback is deliberately not advanced by this documentation-only change; set
+`CHRONO_IMAGE` to the qualified digest above for an explicit 0.3.0 deployment upgrade.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -98,7 +100,7 @@ The public container is the recommended runtime path. Create a long random beare
 keep the service on host loopback, and preserve `/data`:
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
+docker pull ghcr.io/casys-ai/mcp-chrono@sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -106,7 +108,7 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6
+  ghcr.io/casys-ai/mcp-chrono@sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c
 ```
 
 The MCP endpoint is `http://127.0.0.1:3025/mcp`. Requests must carry the same value as
@@ -123,7 +125,7 @@ and do not assert native execution.
 With that exact native runtime available, the pinned JSR server entry point is:
 
 ```sh
-deno run -A jsr:@casys/mcp-chrono@0.2.0/server --stdio
+deno run -A jsr:@casys/mcp-chrono@0.3.0/server --stdio
 ```
 
 ```sh
@@ -184,9 +186,11 @@ deployment secret store. Preserve and back up the `/data` volume: it contains th
 content-addressed cases and request ledger used for idempotency and uncertain-state
 recovery.
 
-`deploy/compose.yaml` is the release operator manifest. It defaults to the immutable
-`0.2.0` digest, keeps `/data` in the named `chrono-data` volume, binds only
-`127.0.0.1:3025:3025`, drops capabilities and runs without privilege escalation:
+`deploy/compose.yaml` is the release operator manifest. Its checked-in fallback remains
+the previously qualified `0.2.0` digest; set `CHRONO_IMAGE` to the published `0.3.0`
+Linux/amd64 digest above as an explicit upgrade. It keeps `/data` in the named
+`chrono-data` volume, binds only `127.0.0.1:3025:3025`, drops capabilities and runs
+without privilege escalation:
 
 ```sh
 cd deploy
@@ -241,14 +245,14 @@ depend on those assets are outside this provider's coverage. This is private
 qualification of the named probe image only; it does not make a package or OCI image
 public, published, or license-cleared.
 
-The public `0.2.0` OCI index is
-`sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6`; its
+The public `0.3.0` OCI index is
+`sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c`; its sole
 Linux/amd64 runtime manifest is
-`sha256:47921f98f1983bd9911f5c12f2610b8bf5dbc37bc37b4ef032a2684d40d4accd`, plus a
-separate attestation manifest carrying BuildKit SBOM and provenance. Its compressed
-runtime config and layers total 189,740,922 bytes. The release workflow rebuilt it,
-passed the authenticated native smoke and notice checks, and validated the pinned
-Chrono/PyChrono components in the generated SBOM before publishing GHCR and JSR 0.2.0.
+`sha256:47ab7aa5cee201e36661ca0f5f59de4098ff4a2beb8b6e44742153d1c63f2534`, plus a
+separate attestation manifest carrying BuildKit SBOM and provenance. The release
+workflow rebuilt it, passed the authenticated native smoke and notice checks, and
+validated the pinned Chrono/PyChrono components in the generated SBOM before publishing
+the immutable GHCR `0.3.0` and commit tags and JSR `@casys/mcp-chrono@0.3.0`.
 
 The previous public `0.1.0` OCI index is
 `sha256:98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da`; its

@@ -149,9 +149,11 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const readme = await text("README.md");
   const compose = await text("deploy/compose.yaml");
   const envExample = await text("deploy/.env.example");
-  const publicImage =
+  const publicReleaseImage =
+    "ghcr.io/casys-ai/mcp-chrono@sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c";
+  const releaseImage = "ghcr.io/casys-ai/mcp-chrono:0.3.0";
+  const composeFallbackImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
-  const releaseImage = "ghcr.io/casys-ai/mcp-chrono:0.2.0";
   assert(release.includes("refs/tags/v"));
   assert(!release.includes(":latest"));
   assert(release.includes('test "$GITHUB_REF_NAME" = "v$version"'));
@@ -234,12 +236,12 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(readme.includes("CHRONO_JSR_RELEASE_ENABLED"));
   assert(readme.replaceAll(/\s+/g, " ").includes("explicitly authorized"));
   assert(readme.includes(releaseImage));
-  assert(readme.includes(publicImage));
-  assert(readme.includes("jsr:@casys/mcp-chrono@0.2.0/server --stdio"));
+  assert(readme.includes(publicReleaseImage));
+  assert(readme.includes("jsr:@casys/mcp-chrono@0.3.0/server --stdio"));
   assert(readme.includes("chrono_case_template_get"));
   assert(readme.includes("sample_offset"));
-  assert(compose.includes(publicImage));
-  assert(envExample.includes(publicImage));
+  assert(compose.includes(composeFallbackImage));
+  assert(envExample.includes(composeFallbackImage));
   assert(!readme.includes("GHCR publication is still pending"));
   assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
   assert(dockerSmoke.includes('"chrono_case_get"'));

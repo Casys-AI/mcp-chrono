@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 — unreleased
+## 0.3.0 — 2026-08-28
 
 - Added a canonical, content-addressed prescribed-kinematics receipt. It binds the exact
   case SHA-256, outcome SHA-256, request identity, package/provider/worker/runtime
@@ -11,6 +11,10 @@
   when read by receipt identity.
 - Made `motor_angle_rad` mandatory in every motor observation and reject a worker whose
   literal raw kinematics exit code and name disagree.
+- Published JSR `@casys/mcp-chrono@0.3.0` and the public Linux/amd64 OCI image at
+  immutable index
+  `sha256:39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c` after the
+  native smoke, notice and SBOM gates passed.
 
 ## 0.2.0 — 2026-08-28
 
