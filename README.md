@@ -129,8 +129,11 @@ deno run --allow-env=CHRONO_STORE_DIR,CHRONO_PYTHON,HOST,PORT \
   --allow-run=python3 server.ts
 ```
 
-The default HTTP listener is `127.0.0.1:3025`; persisted data defaults to `./data`. For
-stdio, use the direct application transport with no network permission:
+The default HTTP listener is `127.0.0.1:3025`; persisted data defaults to `./data`. The
+native entry point accepts exactly two transport forms: no CLI arguments for HTTP, or
+the sole argument `--stdio` for direct application transport. It rejects mixed and
+unknown arguments rather than silently changing transport. For stdio, use no network
+permission:
 
 ```sh
 deno run --allow-env=CHRONO_STORE_DIR,CHRONO_PYTHON --allow-read=. \

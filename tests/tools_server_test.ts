@@ -1,12 +1,25 @@
-import { assert, assertEquals } from "@std/assert";
+import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { ChronoService } from "../src/application/service.ts";
 import { FileChronoStore } from "../src/application/store.ts";
 import { createChronoApp } from "../src/server.ts";
 import { MAX_CASE_JSON_BYTES } from "../src/domain/contract.ts";
+import { PROVIDER_VERSION } from "../src/domain/types.ts";
 import { sha256Utf8 } from "../src/domain/sha.ts";
 import { caseData, FakeRunner } from "./test-helpers.ts";
 
 const proto = "2026-07-28";
+const legacyProto = "2025-06-18";
+const providerInstructions =
+  "Explicit Project Chrono 10.0.0 prescribed rigid-body kinematics only. " +
+  "This provider reports factual observations and never decides product fitness.";
+const serverInfo = { name: "casys-chrono", version: PROVIDER_VERSION };
+
+interface StdioResponse {
+  readonly id?: number;
+  readonly result?: Record<string, unknown>;
+  readonly error?: Record<string, unknown>;
+}
+
 async function start() {
   const listener = Deno.listen({ hostname: "127.0.0.1", port: 0 });
   const port = (listener.addr as Deno.NetAddr).port;
@@ -56,6 +69,68 @@ async function rpc(
   });
   return await response.json() as Record<string, Record<string, unknown>>;
 }
+
+function modernStdioRequest(
+  id: number,
+  method: string,
+  params: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    jsonrpc: "2.0",
+    id,
+    method,
+    params: {
+      ...params,
+      _meta: {
+        "io.modelcontextprotocol/protocolVersion": proto,
+        "io.modelcontextprotocol/clientCapabilities": {},
+        "io.modelcontextprotocol/clientInfo": { name: "stdio-test", version: "1" },
+      },
+    },
+  };
+}
+
+async function exchangeStdio(
+  requests: ReadonlyArray<Record<string, unknown>>,
+): Promise<Map<number, StdioResponse>> {
+  const child = new Deno.Command(Deno.execPath(), {
+    args: ["run", "-A", "server.ts", "--stdio"],
+    cwd: new URL("..", import.meta.url).pathname,
+    stdin: "piped",
+    stdout: "piped",
+    stderr: "piped",
+  }).spawn();
+  const writer = child.stdin.getWriter();
+  try {
+    for (const request of requests) {
+      await writer.write(new TextEncoder().encode(`${JSON.stringify(request)}\n`));
+    }
+  } finally {
+    await writer.close();
+  }
+  const result = await Promise.race([
+    child.output(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => {
+        try {
+          child.kill("SIGKILL");
+        } catch { /* process already stopped */ }
+        reject(new Error("stdio subprocess response timed out"));
+      }, 10_000)
+    ),
+  ]);
+  const decoder = new TextDecoder();
+  assert(result.success, decoder.decode(result.stderr));
+
+  const responses = new Map<number, StdioResponse>();
+  for (const line of decoder.decode(result.stdout).split("\n")) {
+    if (line.trim().length === 0) continue;
+    const response = JSON.parse(line) as StdioResponse;
+    if (typeof response.id === "number") responses.set(response.id, response);
+  }
+  return responses;
+}
+
 Deno.test("HTTP wire supports modern discover, list and structured tool calls", async () => {
   const { port, http, runner } = await start();
   try {
@@ -222,44 +297,86 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     await http.shutdown();
   }
 });
-Deno.test("stdio subprocess answers direct app.start protocol requests", async () => {
-  const child = new Deno.Command(Deno.execPath(), {
-    args: ["run", "-A", "server.ts", "--stdio"],
-    cwd: new URL("..", import.meta.url).pathname,
-    stdin: "piped",
-    stdout: "piped",
-    stderr: "piped",
-  }).spawn();
-  const writer = child.stdin.getWriter();
-  await writer.write(new TextEncoder().encode(
-    JSON.stringify({
+Deno.test("stdio subprocess returns a structured modern discovery identity", async () => {
+  const responses = await exchangeStdio([
+    modernStdioRequest(1, "server/discover"),
+  ]);
+  const discover = responses.get(1);
+  assert(discover, "stdio server/discover did not return a response");
+  assertEquals(discover.error, undefined);
+  assertEquals(discover.result, {
+    supportedVersions: [proto],
+    capabilities: { tools: {} },
+    instructions: providerInstructions,
+    resultType: "complete",
+    ttlMs: 0,
+    cacheScope: "private",
+    _meta: { "io.modelcontextprotocol/serverInfo": serverInfo },
+  });
+});
+
+Deno.test("stdio subprocess supports legacy initialization and a manifest call", async () => {
+  const responses = await exchangeStdio([
+    {
       jsonrpc: "2.0",
       id: 1,
-      method: "server/discover",
+      method: "initialize",
       params: {
-        _meta: {
-          "io.modelcontextprotocol/protocolVersion": proto,
-          "io.modelcontextprotocol/clientCapabilities": {},
-          "io.modelcontextprotocol/clientInfo": { name: "test", version: "1" },
-        },
+        protocolVersion: legacyProto,
+        capabilities: {},
+        clientInfo: { name: "legacy-stdio-test", version: "1" },
       },
-    }) + "\n",
-  ));
-  await writer.close();
-  const result = await Promise.race([
-    child.output(),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => {
-        try {
-          child.kill("SIGKILL");
-        } catch { /* process already stopped */ }
-        reject(new Error("stdio response timed out"));
-      }, 10_000)
-    ),
+    },
+    { jsonrpc: "2.0", method: "notifications/initialized" },
+    {
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: { name: "chrono_manifest_get", arguments: {} },
+    },
   ]);
-  const stdout = new TextDecoder().decode(result.stdout);
-  assert(stdout.includes('"id":1'));
-  assert(stdout.includes("supportedVersions"));
+  const initialized = responses.get(1);
+  assert(initialized, "stdio initialize did not return a response");
+  assertEquals(initialized.error, undefined);
+  assertEquals(initialized.result, {
+    protocolVersion: legacyProto,
+    capabilities: { tools: {} },
+    serverInfo,
+    instructions: providerInstructions,
+  });
+
+  const manifest = responses.get(2);
+  assert(manifest, "stdio chrono_manifest_get did not return a response");
+  assertEquals(manifest.error, undefined);
+  const structured = manifest.result?.structuredContent as Record<string, unknown>;
+  assertEquals(structured.ok, true);
+  const manifestPayload = structured.manifest as Record<string, unknown>;
+  assertEquals(manifestPayload.name, "@casys/mcp-chrono");
+  assertEquals(manifestPayload.version, PROVIDER_VERSION);
+  assertEquals(
+    manifestPayload.case_schema_id,
+    "chrono-prescribed-kinematics-case/1.0",
+  );
+});
+
+Deno.test("native CLI rejects mixed and unknown transport arguments", async () => {
+  for (
+    const args of [
+      ["--stdio", "--port", "3025"],
+      ["--stdio", "--unknown"],
+      ["--unknown"],
+    ]
+  ) {
+    const result = await new Deno.Command(Deno.execPath(), {
+      args: ["run", "-A", "server.ts", ...args],
+      cwd: new URL("..", import.meta.url).pathname,
+    }).output();
+    assertEquals(result.success, false);
+    assertStringIncludes(
+      new TextDecoder().decode(result.stderr),
+      "Invalid CLI arguments: expected no arguments for HTTP or exactly --stdio for stdio",
+    );
+  }
 });
 Deno.test("non-loopback HTTP refuses to start without static bearer configuration", async () => {
   const result = await new Deno.Command(Deno.execPath(), {

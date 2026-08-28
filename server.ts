@@ -1,9 +1,9 @@
 import { createStaticTokenAuthProvider } from "@casys/mcp-server";
 import { createDefaultApp } from "./src/client.ts";
+import { parseCliTransport } from "./src/cli.ts";
 import { PROVIDER_VERSION } from "./src/domain/types.ts";
 
-const args = new Set(Deno.args);
-if (args.has("--stdio")) {
+if (parseCliTransport(Deno.args) === "stdio") {
   await createDefaultApp().start();
 } else {
   const portText = Deno.env.get("PORT") ?? "3025";
