@@ -12,7 +12,6 @@ import type {
   RunLookup,
   RunRecord,
 } from "../domain/types.ts";
-import { isAttestedRunRecord } from "../domain/types.ts";
 import { validateCase } from "../domain/validate.ts";
 
 const encoder = new TextEncoder();
@@ -197,17 +196,13 @@ export class FileChronoStore {
         const caseSha256 = persistedRecordCaseSha256(record, requestId);
         const input = await this.reopenPersistedCase(caseSha256);
         const validated = await validatePersistedRecord(record, requestId, input);
-        // A power loss can occur after a 0.3+ request record is atomically
-        // published but before its secondary receipt index. Only an attested
+        // A power loss can occur after a request record is atomically published
+        // but before its secondary receipt index. Only an exact 0.3.2 attested
         // record contains the receipt identity needed to derive that index.
-        // Exact 0.2 records deliberately remain read-only and unindexed: their
-        // missing worker/runtime/digest facts must never be invented.
-        if (isAttestedRunRecord(validated)) {
-          await this.publishReceiptIndex(
-            validated,
-            encoder.encode(JSON.stringify(record)),
-          );
-        }
+        await this.publishReceiptIndex(
+          validated,
+          encoder.encode(JSON.stringify(record)),
+        );
         return {
           state: "recorded",
           record: validated,
@@ -274,12 +269,6 @@ export class FileChronoStore {
       record.request.request_id,
       input,
     );
-    if (!isAttestedRunRecord(validated)) {
-      throw new ChronoError(
-        "store_corrupt",
-        "A new run record cannot use the legacy persistence shape.",
-      );
-    }
     const dir = this.requestDir(validated.request.request_id);
     const found = await this.lookup(validated.request.request_id);
     if (found.state === "recorded") {
@@ -341,12 +330,6 @@ export class FileChronoStore {
         requestId,
         input,
       );
-      if (!isAttestedRunRecord(validated)) {
-        throw new ChronoError(
-          "store_corrupt",
-          "Receipt index cannot reference an unattested legacy record.",
-        );
-      }
       if (validated.receipt.receipt_sha256 !== receipt) {
         throw new ChronoError(
           "store_corrupt",

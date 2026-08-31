@@ -53,9 +53,7 @@ function identityFromReceipt(receipt: RunReceipt): Pick<
   return {
     package: receipt.package,
     provider: receipt.provider,
-    ...(receipt.server_runtime === undefined
-      ? {}
-      : { server_runtime: receipt.server_runtime }),
+    server_runtime: receipt.server_runtime,
   };
 }
 
@@ -78,9 +76,7 @@ function preimage(
     provider: identity.provider,
     worker,
     runtime: output.runtime,
-    ...(identity.server_runtime === undefined
-      ? {}
-      : { server_runtime: identity.server_runtime }),
+    server_runtime: identity.server_runtime,
     execution_state: output.execution_state,
     kinematics_exit: output.kinematics_exit,
   };

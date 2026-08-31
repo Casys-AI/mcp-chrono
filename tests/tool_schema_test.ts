@@ -64,17 +64,15 @@ Deno.test("kinematics exit schema declares only native code and name pairs", () 
   const success = runOutputSchema.oneOf[0] as unknown as {
     properties: {
       record: {
-        oneOf: Array<{
-          properties: {
-            observation: {
-              properties: { kinematics_exit: object };
-            };
+        properties: {
+          observation: {
+            properties: { kinematics_exit: object };
           };
-        }>;
+        };
       };
     };
   };
-  const schema = success.properties.record.oneOf[0].properties.observation.properties
+  const schema = success.properties.record.properties.observation.properties
     .kinematics_exit as {
       properties: { raw_code: unknown; raw_name: unknown };
       oneOf: Array<{

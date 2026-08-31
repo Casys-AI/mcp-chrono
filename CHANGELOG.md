@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.2 — 2026-08-31
+
+- Fixed the 0.3.1 prescribed-kinematics terminal-tick defect. IEEE-754 accumulation of
+  admitted `step_s` values can land one ULP short of `duration_s`. A time-closeness
+  terminator either took a leftover epsilon step or relabelled an interior engine tick
+  as the requested duration. The worker now uses a bounded planned-step loop:
+  `ceil(duration_s / step_s)` steps, interior `min(step, remaining)`, the last planned
+  index consumes the actual positive remainder, and published sample times come only
+  from Chrono's `GetChTime()`; they are never relabelled to the target.
+- Coverage is the admitted 1.0 case contract: duration/step ratio at most 10,000,
+  including the live `0.1`×10 schedule, non-dividing durations, tiny and subnormal
+  admitted ratios, and the 10,000-step cadence-20 page. Native smoke remains the
+  qualification oracle. This does not add contact, forces, dynamics, a new receipt
+  schema, a rewritten durable record, or a Compose fallback change.
+- Breaking durable-record authority: 0.3.2 reads only exact 0.3.2 attested run receipts.
+  A pre-receipt 0.2 or attested 0.3.0/0.3.1 record encountered on `/data` fails closed
+  as unsupported/corrupt. Bytes on disk are neither migrated, deleted, rewritten nor
+  relabelled.
+- Source version, git tag, JSR package and GHCR image are distinct verifiable states.
+  Tagging `v0.3.2` does not by itself complete a registry transaction. JSR and GHCR
+  publication remain conditional on the authorized tag workflow gates and must be
+  verified independently. The previous qualified public Linux/amd64 identity is
+  `sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c`.
+
 ## 0.3.1 — 2026-08-28
 
 - Restored truthful read compatibility for an exact pre-receipt 0.2 durable request

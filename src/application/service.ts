@@ -10,9 +10,7 @@ import type {
   RunLookup,
   RunLookupView,
   RunRecord,
-  RunRecordView,
   RunRequest,
-  StoredRunRecord,
 } from "../domain/types.ts";
 import { validateCase } from "../domain/validate.ts";
 import { FileChronoStore } from "./store.ts";
@@ -26,7 +24,7 @@ export interface CaseSubmission {
 }
 export interface RunResult {
   replayed: boolean;
-  record: StoredRunRecord;
+  record: RunRecord;
 }
 export const CASE_URI_PREFIX = "chrono-case:sha256:";
 const defaultTimeout = 15_000;
@@ -168,16 +166,8 @@ export class ChronoService {
   }
   viewRecord(
     record: RunRecord,
-    page?: SamplePageRequest,
-  ): AttestedRunRecordView;
-  viewRecord(
-    record: StoredRunRecord,
-    page?: SamplePageRequest,
-  ): RunRecordView;
-  viewRecord(
-    record: StoredRunRecord,
     page: SamplePageRequest = {},
-  ): RunRecordView {
+  ): AttestedRunRecordView {
     return toRunRecordView(record, page);
   }
   async readCase(sha256: string): Promise<CaseSubmission & { case_json: string }> {

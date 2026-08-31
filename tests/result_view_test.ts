@@ -1,7 +1,7 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import { toRunRecordView } from "../src/domain/result-view.ts";
 import { ChronoError } from "../src/domain/errors.ts";
-import type { RunRecord } from "../src/domain/types.ts";
+import { PROVIDER_VERSION, type RunRecord } from "../src/domain/types.ts";
 import { observation } from "./test-helpers.ts";
 
 const record: RunRecord = {
@@ -16,8 +16,8 @@ const record: RunRecord = {
     outcome_sha256: "c".repeat(64),
     request_id: "paged-run",
     recorded_at: "2026-08-28T00:00:00.000Z",
-    package: { name: "@casys/mcp-chrono", version: "0.3.1" },
-    provider: { name: "casys-chrono", version: "0.3.1" },
+    package: { name: "@casys/mcp-chrono", version: PROVIDER_VERSION },
+    provider: { name: "casys-chrono", version: PROVIDER_VERSION },
     worker: { source_sha256: "d".repeat(64) },
     runtime: { binding: "pychrono", python_version: "3.12.0" },
     server_runtime: { deno_version: "2.9.6" },

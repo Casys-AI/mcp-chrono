@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this provider, please cite it."
 title: "Casys MCP Chrono"
-version: "0.3.1"
+version: "0.3.2"
 license: MIT
 authors:
   - family-names: Casys

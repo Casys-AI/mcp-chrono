@@ -324,6 +324,10 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     assertEquals(receipt.case_sha256, sha);
     assertEquals((receipt.outcome_sha256 as string).length, 64);
     assertEquals((receipt.receipt_sha256 as string).length, 64);
+    assertEquals(receipt.package, {
+      name: "@casys/mcp-chrono",
+      version: PROVIDER_VERSION,
+    });
     assertEquals(receipt.server_runtime, { deno_version: Deno.version.deno });
     assertEquals((record.observation as Record<string, unknown>).runtime, {
       binding: "pychrono",
@@ -355,9 +359,12 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     await http.shutdown();
   }
 });
-Deno.test("HTTP readback preserves exact legacy 0.2 data without a receipt", async () => {
+Deno.test("HTTP readback fails closed on an exact 0.2 durable record", async () => {
   const storeRoot = await Deno.makeTempDir();
   const fixture = await materializeLegacyFixture(storeRoot);
+  const originalRecord = await Deno.readTextFile(
+    `${storeRoot}/requests/${fixture.request_id}/record.json`,
+  );
   const { port, http, runner } = await start(storeRoot);
   try {
     const caseReadback = await rpc(port, 1, "tools/call", {
@@ -372,25 +379,13 @@ Deno.test("HTTP readback preserves exact legacy 0.2 data without a receipt", asy
       name: "chrono_run_get",
       arguments: { request_id: fixture.request_id },
     });
-    const record = (lookup.result?.structuredContent as Record<string, unknown>)
-      .record as Record<string, unknown>;
-    assertEquals(record.receipt, undefined);
-    assertEquals(record.provenance, {
-      persistence_format: "legacy-0.2",
-      attestation: "unattested",
-      receipt: "unavailable",
-      unavailable: [
-        "receipt_sha256",
-        "outcome_sha256",
-        "package",
-        "provider",
-        "worker",
-        "runtime",
-      ],
-    });
+    assertEquals(lookup.result?.isError, true);
     assertEquals(
-      (record.observation as Record<string, unknown>).runtime,
-      undefined,
+      ((lookup.result?.structuredContent as Record<string, unknown>).error as Record<
+        string,
+        unknown
+      >).code,
+      "store_corrupt",
     );
     const replay = await rpc(port, 3, "tools/call", {
       name: "chrono_run_prescribed_kinematics",
@@ -399,11 +394,21 @@ Deno.test("HTTP readback preserves exact legacy 0.2 data without a receipt", asy
         case_sha256: fixture.case_sha256,
       },
     });
+    assertEquals(replay.result?.isError, true);
     assertEquals(
-      (replay.result?.structuredContent as Record<string, unknown>).replayed,
-      true,
+      ((replay.result?.structuredContent as Record<string, unknown>).error as Record<
+        string,
+        unknown
+      >).code,
+      "store_corrupt",
     );
     assertEquals(runner.calls, 0);
+    assertEquals(
+      await Deno.readTextFile(
+        `${storeRoot}/requests/${fixture.request_id}/record.json`,
+      ),
+      originalRecord,
+    );
   } finally {
     await http.shutdown();
     await Deno.remove(storeRoot, { recursive: true });
@@ -509,9 +514,12 @@ Deno.test("stdio subprocess stores and rereads exact case bytes", async () => {
   );
 });
 
-Deno.test("stdio readback preserves exact legacy 0.2 data without a receipt", async () => {
+Deno.test("stdio readback fails closed on an exact 0.2 durable record", async () => {
   const storeRoot = await Deno.makeTempDir();
   const fixture = await materializeLegacyFixture(storeRoot);
+  const originalRecord = await Deno.readTextFile(
+    `${storeRoot}/requests/${fixture.request_id}/record.json`,
+  );
   try {
     const responses = await exchangeStdio([
       modernStdioRequest(1, "tools/call", {
@@ -539,26 +547,20 @@ Deno.test("stdio readback preserves exact legacy 0.2 data without a receipt", as
       string,
       unknown
     >;
-    const record = lookup.record as Record<string, unknown>;
-    assertEquals(record.receipt, undefined);
-    assertEquals(record.provenance, {
-      persistence_format: "legacy-0.2",
-      attestation: "unattested",
-      receipt: "unavailable",
-      unavailable: [
-        "receipt_sha256",
-        "outcome_sha256",
-        "package",
-        "provider",
-        "worker",
-        "runtime",
-      ],
-    });
+    assertEquals(lookup.ok, false);
+    assertEquals((lookup.error as Record<string, unknown>).code, "store_corrupt");
     const replay = responses.get(3)?.result?.structuredContent as Record<
       string,
       unknown
     >;
-    assertEquals(replay.replayed, true);
+    assertEquals(replay.ok, false);
+    assertEquals((replay.error as Record<string, unknown>).code, "store_corrupt");
+    assertEquals(
+      await Deno.readTextFile(
+        `${storeRoot}/requests/${fixture.request_id}/record.json`,
+      ),
+      originalRecord,
+    );
   } finally {
     await Deno.remove(storeRoot, { recursive: true });
   }

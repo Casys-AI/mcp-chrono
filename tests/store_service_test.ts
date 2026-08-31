@@ -4,8 +4,7 @@ import { ChronoService } from "../src/application/service.ts";
 import { FileChronoStore } from "../src/application/store.ts";
 import { sha256Utf8 } from "../src/domain/sha.ts";
 import { createRunReceipt, sha256CanonicalJson } from "../src/domain/receipt.ts";
-import type { RunRecord } from "../src/domain/types.ts";
-import { isAttestedRunRecord } from "../src/domain/types.ts";
+import { PROVIDER_VERSION, type RunRecord } from "../src/domain/types.ts";
 import { caseData, FakeRunner, observation } from "./test-helpers.ts";
 
 async function setup() {
@@ -68,6 +67,8 @@ Deno.test("recorded requests are exact idempotent replays and conflicts stay con
   const first = await service.run({ request_id: "run-1", case_sha256: sha });
   const repeated = await service.run({ request_id: "run-1", case_sha256: sha });
   assertEquals(first.replayed, false);
+  assertEquals(first.record.receipt.package.version, PROVIDER_VERSION);
+  assertEquals(first.record.receipt.provider.version, PROVIDER_VERSION);
   assertEquals(repeated.replayed, true);
   assertEquals(runner.calls, 1);
   await assertRejects(
@@ -103,38 +104,26 @@ Deno.test("a concurrent request id has one native execution owner", async () => 
   assertEquals(runner.calls, 1);
   assertEquals(results.filter((result) => result.status === "fulfilled").length, 1);
 });
-Deno.test("an exact 0.2 fixture remains replayable and explicitly unattested", async () => {
+Deno.test("an exact 0.2 fixture is unsupported and is never relabelled", async () => {
   const { root, runner, service } = await setup();
   const { caseText, request } = await materializeLegacyFixture(root);
   const recoveredCase = await service.readCase(request.case_sha256);
   assertEquals(recoveredCase.case_json, caseText);
-
-  const found = await service.lookup(request.request_id);
-  assertEquals(found.state, "recorded");
-  assert(found.state === "recorded");
-  assert(!("receipt" in found.record));
-  assertEquals(found.record.output.samples[0].motors[0].motor_angle_rad, undefined);
-
-  const replay = await service.run(request);
-  assertEquals(replay.replayed, true);
+  await assertRejects(
+    () => service.lookup(request.request_id),
+    Error,
+    "Persisted run record is invalid",
+  );
+  await assertRejects(
+    () => service.run(request),
+    Error,
+    "Persisted run record is invalid",
+  );
   assertEquals(runner.calls, 0);
-  const view = service.viewRecord(replay.record);
-  assert("provenance" in view);
-  assertEquals(view.provenance, {
-    persistence_format: "legacy-0.2",
-    attestation: "unattested",
-    receipt: "unavailable",
-    unavailable: [
-      "receipt_sha256",
-      "outcome_sha256",
-      "package",
-      "provider",
-      "worker",
-      "runtime",
-    ],
-  });
-  assert(!("runtime" in view.observation));
-  assertEquals(view.sample_page.samples[0].motors[0].motor_angle_rad, undefined);
+  assertEquals(
+    await Deno.readTextFile(`${root}/requests/${request.request_id}/record.json`),
+    await Deno.readTextFile(new URL("record.json", legacyFixture)),
+  );
   await assertRejects(() => Deno.stat(`${root}/receipts`), Deno.errors.NotFound);
 });
 Deno.test("a near-legacy record with invented receipt fields stays corrupt", async () => {
@@ -152,7 +141,7 @@ Deno.test("a near-legacy record with invented receipt fields stays corrupt", asy
     "Persisted run record is invalid",
   );
 });
-Deno.test("an attested 0.3.0 record repairs its receipt index after upgrade", async () => {
+Deno.test("an attested 0.3.0 record is unsupported and is never relabelled", async () => {
   const { root, runner, service, sha, text } = await setup();
   await service.submit(text, sha);
   const request = { request_id: "attested-0.3.0-fixture", case_sha256: sha };
@@ -172,7 +161,7 @@ Deno.test("an attested 0.3.0 record repairs its receipt index after upgrade", as
     execution_state: output.execution_state,
     kinematics_exit: output.kinematics_exit,
   };
-  const record: RunRecord = {
+  const record = {
     request,
     case_uri: `chrono-case:sha256:${sha}`,
     recorded_at,
@@ -182,21 +171,84 @@ Deno.test("an attested 0.3.0 record repairs its receipt index after upgrade", as
       receipt_sha256: await sha256CanonicalJson(receiptPreimage),
     },
   };
+  const bytes = JSON.stringify(record);
   await Deno.mkdir(`${root}/requests/${request.request_id}`, { recursive: true });
   await Deno.writeTextFile(
     `${root}/requests/${request.request_id}/record.json`,
-    JSON.stringify(record),
+    bytes,
   );
-  const replay = await service.run(request);
-  assertEquals(replay.replayed, true);
+  await assertRejects(
+    () => service.lookup(request.request_id),
+    Error,
+    "Persisted run record is invalid",
+  );
+  await assertRejects(
+    () => service.run(request),
+    Error,
+    "Persisted run record is invalid",
+  );
   assertEquals(runner.calls, 0);
-  assert(isAttestedRunRecord(replay.record));
-  assertEquals(replay.record.receipt.package.version, "0.3.0");
-  assertEquals(replay.record.receipt.server_runtime, undefined);
   assertEquals(
-    (await new FileChronoStore(root).lookupReceipt(record.receipt.receipt_sha256))
-      .request.request_id,
-    request.request_id,
+    await Deno.readTextFile(`${root}/requests/${request.request_id}/record.json`),
+    bytes,
+  );
+  await assertRejects(
+    () => new FileChronoStore(root).lookupReceipt(record.receipt.receipt_sha256),
+    Error,
+    "No stored run has that receipt SHA-256",
+  );
+});
+Deno.test("an attested 0.3.1 record is unsupported and is never relabelled", async () => {
+  const { root, runner, service, sha, text } = await setup();
+  await service.submit(text, sha);
+  const request = { request_id: "attested-0.3.1-fixture", case_sha256: sha };
+  const recorded_at = "2026-08-28T00:00:00.000Z";
+  const output = observation();
+  const outcome_sha256 = await sha256CanonicalJson(output);
+  const receiptPreimage = {
+    schema_id: "chrono-prescribed-kinematics-receipt/1.0" as const,
+    case_sha256: sha,
+    outcome_sha256,
+    request_id: request.request_id,
+    recorded_at,
+    package: { name: "@casys/mcp-chrono" as const, version: "0.3.1" as const },
+    provider: { name: "casys-chrono" as const, version: "0.3.1" as const },
+    worker: { source_sha256: "f".repeat(64) },
+    runtime: output.runtime,
+    server_runtime: { deno_version: "2.9.6" },
+    execution_state: output.execution_state,
+    kinematics_exit: output.kinematics_exit,
+  };
+  const record = {
+    request,
+    case_uri: `chrono-case:sha256:${sha}`,
+    recorded_at,
+    output,
+    receipt: {
+      ...receiptPreimage,
+      receipt_sha256: await sha256CanonicalJson(receiptPreimage),
+    },
+  };
+  const bytes = JSON.stringify(record);
+  await Deno.mkdir(`${root}/requests/${request.request_id}`, { recursive: true });
+  await Deno.writeTextFile(
+    `${root}/requests/${request.request_id}/record.json`,
+    bytes,
+  );
+  await assertRejects(
+    () => service.lookup(request.request_id),
+    Error,
+    "Persisted run record is invalid",
+  );
+  await assertRejects(
+    () => service.run(request),
+    Error,
+    "Persisted run record is invalid",
+  );
+  assertEquals(runner.calls, 0);
+  assertEquals(
+    await Deno.readTextFile(`${root}/requests/${request.request_id}/record.json`),
+    bytes,
   );
 });
 Deno.test("an absent or corrupt case cannot consume a request identity", async () => {
@@ -384,7 +436,7 @@ Deno.test("immutable publication is usable with directory sync on macOS and Linu
   }
   assertEquals(names.sort(), ["intent.json", "record.json"]);
   assert(found.state === "recorded");
-  assert(isAttestedRunRecord(found.record));
+  assertEquals(found.record.receipt.package.version, PROVIDER_VERSION);
   assert(
     (await store.lookupReceipt(found.record.receipt.receipt_sha256)).request
       .request_id ===
