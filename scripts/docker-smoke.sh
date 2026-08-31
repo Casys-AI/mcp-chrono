@@ -167,8 +167,9 @@ assert sample_page["offset"] == 0, sample_page
 assert sample_page["total"] == output["sample_count"], (sample_page, output)
 assert sample_page["returned"] == len(samples), sample_page
 assert sample_page["has_more"] is False, sample_page
-assert len(samples) >= 2, samples
+assert len(samples) == 3, samples
 assert_close(samples[0]["time_s"], 0.0)
+assert_close(samples[1]["time_s"], 0.5)
 assert_close(samples[-1]["time_s"], case["duration_s"])
 for previous, current in zip(samples, samples[1:]):
     assert current["time_s"] > previous["time_s"], samples
