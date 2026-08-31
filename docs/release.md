@@ -3,17 +3,16 @@
 ## Current release line
 
 Source version `0.3.3` is the viewer-contract release. Its immutable JSR and GHCR
-identities are recorded here after the tag workflow and fresh-consumption checks pass.
+identities were published from tag `v0.3.3` and commit
+`3776c95215e9ff2ee317576b46070e2fa7fb5aca`:
 
-Until that transaction is complete, the last verified published identities remain:
-
-- JSR: `jsr:@casys/mcp-chrono@0.3.2/server`
+- JSR: `jsr:@casys/mcp-chrono@0.3.3/server`
 - GHCR index:
-  `ghcr.io/casys-ai/mcp-chrono@sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557`
-- release commit: `18e118453111391eae632f8f5ec737e6c9f04847`
+  `ghcr.io/casys-ai/mcp-chrono@sha256:c362fe99f1fe0ef3dfcf29f63fe29ba610e0b980b04c4691802ddf303cc58395`
 
-The version and commit tags for that image resolve to the same Linux/amd64 OCI index.
-The index includes a separate BuildKit SBOM/provenance attestation.
+The version and commit-SHA tags resolve to that same Linux/amd64 OCI index. A fresh JSR
+import with the new-version age override and a cached-only repeat both succeeded. The
+index includes separate BuildKit SBOM and provenance attestations.
 
 ## Release gate
 
