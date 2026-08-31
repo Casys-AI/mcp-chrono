@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "io.casys.mcp-chrono.recorded-run-session/1.0",
+  "kind": "chrono.recorded-run",
+  "basis": {
+    "sessionFingerprint": "sha256:516c4afaa5122d0eab9a0147f2d4da690679b11f5b830c1d6a65cb6527cb3730"
+  },
+  "anchor": {
+    "kind": "chrono-recorded-run",
+    "id": "documentation-fixture-not-evidence",
+    "uri": "chrono-receipt:sha256:2685c5d24ea01102130c1d57a54be1f5ca1eb9be830ebea9e98cc67f7d928bd0",
+    "fingerprint": "sha256:2685c5d24ea01102130c1d57a54be1f5ca1eb9be830ebea9e98cc67f7d928bd0"
+  },
+  "provenance": {
+    "kind": "mcp-chrono-recorded-run",
+    "server": {
+      "package": "@casys/mcp-chrono",
+      "version": "0.3.3"
+    },
+    "requestId": "documentation-fixture-not-evidence",
+    "caseArtifact": {
+      "uri": "chrono-case:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "outcomeFingerprint": "sha256:b23c778e79173c3deb4afa864a5bdd4e398b7bd3f49c5a6502be2d6f763a51c7",
+    "receiptArtifact": {
+      "uri": "chrono-receipt:sha256:2685c5d24ea01102130c1d57a54be1f5ca1eb9be830ebea9e98cc67f7d928bd0",
+      "fingerprint": "sha256:2685c5d24ea01102130c1d57a54be1f5ca1eb9be830ebea9e98cc67f7d928bd0"
+    }
+  },
+  "projection": {
+    "status": "available",
+    "record": {
+      "request": {
+        "request_id": "documentation-fixture-not-evidence",
+        "case_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "case_uri": "chrono-case:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "recorded_at": "2026-08-31T00:00:00.000Z",
+      "output": {
+        "engine": {
+          "name": "Project Chrono",
+          "version": "10.0.0"
+        },
+        "runtime": {
+          "binding": "pychrono",
+          "python_version": "3.12.0"
+        },
+        "samples": [
+          {
+            "time_s": 0,
+            "bodies": [
+              {
+                "id": "fixture-root",
+                "position_m": [
+                  0,
+                  0,
+                  0
+                ],
+                "rotation_wxyz": [
+                  1,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ],
+            "motors": []
+          },
+          {
+            "time_s": 1,
+            "bodies": [
+              {
+                "id": "fixture-root",
+                "position_m": [
+                  0,
+                  0,
+                  0
+                ],
+                "rotation_wxyz": [
+                  1,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ],
+            "motors": []
+          }
+        ],
+        "not_evaluated": [
+          "collision",
+          "clearance",
+          "contact",
+          "forces",
+          "torques",
+          "dynamics",
+          "strength",
+          "safety",
+          "product fitness"
+        ],
+        "execution_state": "completed",
+        "kinematics_exit": {
+          "raw_code": 1,
+          "raw_name": "SUCCESS"
+        }
+      },
+      "receipt": {
+        "schema_id": "chrono-prescribed-kinematics-receipt/1.0",
+        "receipt_sha256": "2685c5d24ea01102130c1d57a54be1f5ca1eb9be830ebea9e98cc67f7d928bd0",
+        "case_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "outcome_sha256": "b23c778e79173c3deb4afa864a5bdd4e398b7bd3f49c5a6502be2d6f763a51c7",
+        "request_id": "documentation-fixture-not-evidence",
+        "recorded_at": "2026-08-31T00:00:00.000Z",
+        "package": {
+          "name": "@casys/mcp-chrono",
+          "version": "0.3.3"
+        },
+        "provider": {
+          "name": "casys-chrono",
+          "version": "0.3.3"
+        },
+        "worker": {
+          "source_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "runtime": {
+          "binding": "pychrono",
+          "python_version": "3.12.0"
+        },
+        "server_runtime": {
+          "deno_version": "2.9.6"
+        },
+        "execution_state": "completed",
+        "kinematics_exit": {
+          "raw_code": 1,
+          "raw_name": "SUCCESS"
+        }
+      }
+    }
+  }
+}

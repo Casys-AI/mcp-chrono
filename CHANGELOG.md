@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.3 — Unreleased
+## 0.3.3 — 2026-08-31
 
 - Added and served an exact serialized MCP View App manifest for the Chrono run-record
   viewer, including `viewer.session.apply` and its provider-owned recorded-run session
@@ -11,6 +11,11 @@
 - Replaced the former four-entry viewer catalog with exactly one flat, responsive
   `chrono.recorded-run` business component. It contains only the run identity, factual
   sample/execution readings and receipt provenance, with no verdict, limit or tone.
+- Reworked the root README as a concise product entrance and moved the case, viewer,
+  deployment, native-adapter and release details under `docs/`.
+- Added a contract-validated documentation fixture and a visibly labelled viewer
+  screenshot. The fixture is presentation evidence only, not a native Chrono execution
+  or engineering proof.
 
 ## 0.3.2 — 2026-08-31
 

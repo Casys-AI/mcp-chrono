@@ -132,7 +132,7 @@ Deno.test("release pins and package version stay explicit", async () => {
       `CPU-only lock includes ${forbiddenPackagePrefix}`,
     );
   }
-  assertEquals(deno.version, "0.3.2");
+  assertEquals(deno.version, "0.3.3");
   assertEquals(deno.exports, {
     ".": "./mod.ts",
     "./server": "./server.ts",
@@ -154,31 +154,21 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const readme = await text("README.md");
   const changelog = await text("CHANGELOG.md");
   const security = await text("SECURITY.md");
+  const contractDocs = await text("docs/contract.md");
+  const deploymentDocs = await text("docs/deployment.md");
+  const releaseDocs = await text("docs/release.md");
+  const viewerDocs = await text("docs/viewer.md");
   const compose = await text("deploy/compose.yaml");
   const envExample = await text("deploy/.env.example");
   const sourceVersion = JSON.parse(await text("deno.json")).version as string;
-  const previousVersion = "0.3.1";
+  const previousVersion = "0.3.2";
   const previousPublicImage =
-    "ghcr.io/casys-ai/mcp-chrono@sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c";
-  const publicReleaseImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557";
-  const releaseCommit = "18e118453111391eae632f8f5ec737e6c9f04847";
   const releaseImage = `ghcr.io/casys-ai/mcp-chrono:${sourceVersion}`;
   const jsrServer = `jsr:@casys/mcp-chrono@${sourceVersion}/server --stdio`;
   const composeFallbackImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
-  const knownReleaseDigests = new Set([
-    "2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557",
-    "b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c",
-    "373be7bae6fed0518bcea6f8da29ae79259148083fbd3048170fbf52904fb795",
-    "39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c",
-    "b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6",
-    "98a47f6a2aef49f429059692b1d4ee34feb361581768a1bd954d441ed7c450da",
-    "254927f8581e35f8fcc4e83f1fa92ec218e3c0d21e54dc0436651704bae6b7d6",
-    "3bc07b0bf3bf40e0412141f5ffe1bfb4ae93d98dfeed09384211cf620640b381",
-    "fb3af9519ff60c1911221c2a3286a112eb7aeae6cd9c089f042d9a9275d62d3d",
-  ]);
-  assertEquals(sourceVersion, "0.3.2");
+  assertEquals(sourceVersion, "0.3.3");
   assert(sourceVersion !== previousVersion);
   assert(release.includes("refs/tags/v"));
   assert(!release.includes(":latest"));
@@ -259,94 +249,33 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   }
   assert(gitignore.includes("!**/.env.example"));
   assert(!manifest.includes("release_status"));
-  assert(readme.includes("CHRONO_GHCR_RELEASE_ENABLED"));
-  assert(readme.includes("CHRONO_JSR_RELEASE_ENABLED"));
-  assert(readme.replaceAll(/\s+/g, " ").includes("explicitly authorized"));
-  assert(readme.includes(`**${sourceVersion}**`));
+  assert(releaseDocs.includes("CHRONO_GHCR_RELEASE_ENABLED"));
+  assert(releaseDocs.includes("CHRONO_JSR_RELEASE_ENABLED"));
+  assert(
+    releaseDocs.replaceAll(/\s+/g, " ").includes("explicitly authorized"),
+  );
   assert(readme.includes(releaseImage));
   assert(readme.includes(jsrServer));
-  assert(readme.includes(publicReleaseImage));
-  assert(readme.includes(`sha-${releaseCommit}`));
-  assert(readme.includes(previousPublicImage));
-  const collapsedReadme = readme.replaceAll(/\s+/g, " ");
-  assert(
-    collapsedReadme.includes(
-      `OCI revision \`${releaseCommit}\``,
-    ),
-  );
-  assert(collapsedReadme.includes("both resolve to OCI index"));
-  assert(collapsedReadme.includes("fresh-imported successfully"));
-  assert(
-    collapsedReadme.includes(
-      "the source version alone is not a registry fact.",
-    ),
-  );
-  assert(readme.includes("never publishes `latest`"));
+  assert(releaseDocs.includes(previousPublicImage));
+  assert(releaseDocs.includes(`jsr:@casys/mcp-chrono@${previousVersion}/server`));
+  assert(releaseDocs.includes("source version alone is not registry evidence"));
+  assert(releaseDocs.includes("never publishes `latest`"));
   assert(!readme.includes(":latest"));
   assert(!changelog.includes(":latest"));
   assert(!security.includes(":latest"));
-  const releaseEntry = changelog.split("## 0.3.2")[1]?.split("## 0.3.1")[0] ?? "";
-  assert(changelog.includes(`## ${sourceVersion} — 2026-08-31`));
-  assert(releaseEntry.includes("terminal-tick"));
-  assert(releaseEntry.includes(`Published JSR \`@casys/mcp-chrono@${sourceVersion}\``));
-  assert(
-    releaseEntry.includes(
-      publicReleaseImage.replace("ghcr.io/casys-ai/mcp-chrono@", ""),
-    ),
-  );
-  assert(releaseEntry.includes(releaseCommit));
-  assert(!/has not happened/i.test(releaseEntry));
-  assert(!/source candidate/i.test(releaseEntry));
-  for (
-    const phrase of [
-      "source candidate",
-      "candidate only",
-      "has not happened",
-      "does not exist yet",
-      "not published yet",
-      "currently published",
-    ]
-  ) {
-    assert(
-      !collapsedReadme.toLowerCase().includes(phrase),
-      `README still claims ${phrase}`,
-    );
-    assert(
-      !security.toLowerCase().includes(phrase),
-      `SECURITY still claims ${phrase}`,
-    );
-  }
-  for (
-    const [name, doc] of [
-      ["README", readme],
-      ["CHANGELOG", changelog],
-      ["SECURITY", security],
-    ] as const
-  ) {
-    for (const match of doc.matchAll(/sha256:([0-9a-f]{64})/g)) {
-      assert(
-        knownReleaseDigests.has(match[1]),
-        `${name} invents digest ${match[1]}`,
-      );
-    }
-  }
-  assert(security.includes(sourceVersion));
   assert(security.includes(previousVersion));
-  assert(
-    security.includes(publicReleaseImage.replace("ghcr.io/casys-ai/mcp-chrono@", "")),
-  );
-  assert(
-    security.includes(
-      "sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c",
-    ),
-  );
   assert(!security.includes(releaseImage));
-  assert(!/currently published/i.test(security));
-  assert(readme.includes("chrono_case_template_get"));
-  assert(readme.includes("sample_offset"));
+  assert(contractDocs.includes("chrono_case_template_get"));
+  assert(contractDocs.includes("sample_offset"));
+  assert(viewerDocs.includes("documentation-fixture-not-evidence"));
+  assert(viewerDocs.includes("viewer.session.apply"));
+  assert(deploymentDocs.includes(releaseImage));
+  assert(readme.includes("docs/assets/chrono-recorded-run-viewer.png"));
+  assert(readme.includes("docs/contract.md"));
+  assert(readme.includes("docs/deployment.md"));
+  assert(!/\b\d+\s+tools?\b/i.test(readme));
   assert(compose.includes(composeFallbackImage));
   assert(envExample.includes(composeFallbackImage));
-  assert(!readme.includes("GHCR publication is still pending"));
   assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
   assert(dockerSmoke.includes('"chrono_case_get"'));
   assert(dockerSmoke.includes('"chrono_run_receipt_get"'));

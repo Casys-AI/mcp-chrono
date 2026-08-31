@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { fromFileUrl } from "@std/path";
 
-const PINNED_MCP_SERVER_COMMIT = "8fad891839203122efbe2438ba81a6e7d08c9202";
+const PINNED_MCP_SERVER_COMMIT = "0629f67179868c9f17a3fb6705da32fdfcbcc216";
 
 Deno.test("viewer build fails closed without every audited split root", async () => {
   const repository = fromFileUrl(new URL("../", import.meta.url));
