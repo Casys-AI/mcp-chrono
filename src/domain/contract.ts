@@ -254,7 +254,7 @@ export const AGENT_WORKFLOW = [
   "Serialize the final case as exact UTF-8 JSON and call chrono_case_submit. case_sha256 is optional; if supplied it is an expected digest and a mismatch fails without storage.",
   "Call chrono_run_prescribed_kinematics with the returned case_sha256 and a fresh request_id. Reuse a recorded request_id only for the same case.",
   "Use chrono_case_get with case_sha256 when another client must recover the exact submitted UTF-8 bytes.",
-  "Read records with chrono_run_get, or chrono_run_receipt_get with a recorded canonical receipt_sha256. Only an exact 0.3.2 attested receipt is readable; an older persisted record is unsupported/corrupt and is never rewritten or relabelled. Both read paths return an observation summary plus a bounded sample page; advance sample_offset until has_more is false.",
+  "Read records with chrono_run_get, or chrono_run_receipt_get with a recorded canonical receipt_sha256. This development source reads only its exact 0.3.3 receipt identity; another persisted version is unsupported/corrupt and is never rewritten or relabelled. Both read paths return an observation summary plus a bounded sample page; advance sample_offset until has_more is false.",
 ] as const;
 
 export const INPUT_POSE_SEMANTICS =
@@ -277,7 +277,7 @@ export const RESULT_PAGING_CONTRACT = {
 export const RECEIPT_CONTRACT = {
   schema_id: "chrono-prescribed-kinematics-receipt/1.0",
   contract:
-    "Every recorded run has a canonical receipt SHA-256 over its case identity, outcome SHA-256, request identity, recorded timestamp, package/provider/worker/PyChrono runtime/server Deno runtime identities and literal execution state. The receipt is factual provenance, never a product verdict. Only an exact 0.3.2 attested receipt is readable; an older persisted record is unsupported/corrupt and is never rewritten or relabelled.",
+    "Every recorded run has a canonical receipt SHA-256 over its case identity, outcome SHA-256, request identity, recorded timestamp, package/provider/worker/PyChrono runtime/server Deno runtime identities and literal execution state. The receipt is factual provenance, never a product verdict. This development source reads only its exact 0.3.3 receipt identity; another persisted version is unsupported/corrupt and is never rewritten or relabelled.",
 } as const;
 
 export const NON_CLAIMS = [

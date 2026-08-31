@@ -1,13 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.3.3 — Unreleased
 
-- Added a native MCP Apps run-record viewer for `chrono_run_prescribed_kinematics`,
-  `chrono_run_get` and `chrono_run_receipt_get`. The default surface is one compact
-  semantic run record; bounded sample page, execution facts and receipt provenance are
-  host-selectable catalog components built from `@casys/mcp-view-components`. Solver
-  `SUCCESS` remains a kinematics exit name, not a proof. Text-only clients are
-  unchanged.
+- Added and served an exact serialized MCP View App manifest for the Chrono run-record
+  viewer, including `viewer.session.apply` and its provider-owned recorded-run session
+  schema.
+- Recorded sessions now join the host anchor to the canonical receipt, rehash the
+  receipt preimage and complete durable outcome, and preserve literal unavailable or
+  unresolved states.
+- Replaced the former four-entry viewer catalog with exactly one flat, responsive
+  `chrono.recorded-run` business component. It contains only the run identity, factual
+  sample/execution readings and receipt provenance, with no verdict, limit or tone.
 
 ## 0.3.2 — 2026-08-31
 

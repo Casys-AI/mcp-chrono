@@ -1,6 +1,6 @@
 {
   "name": "@casys/mcp-chrono",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "exports": {
     ".": "./mod.ts",
     "./server": "./server.ts"
@@ -21,7 +21,7 @@
     "release:check": "deno fmt --check && deno task check && deno task lint && deno task test && deno task check:ui:bundle && deno publish --dry-run"
   },
   "fmt": {
-    "exclude": ["LICENSES", "src/ui/dist"],
+    "exclude": ["LICENSES", "src/ui/dist", "src/ui/app-manifest.json"],
     "lineWidth": 88,
     "indentWidth": 2,
     "singleQuote": false

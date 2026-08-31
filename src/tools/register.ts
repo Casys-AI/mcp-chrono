@@ -173,7 +173,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_prescribed_kinematics",
     description:
-      "Run a previously submitted explicit case once for a request identity. Return a bounded sample page only. Only an exact 0.3.2 attested receipt is readable; an older persisted record is unsupported/corrupt. An uncertain intent is never rerun automatically.",
+      "Run a previously submitted explicit case once for a request identity. Return a bounded sample page only. This development source reads only an exact 0.3.3 receipt identity; another persisted version is unsupported/corrupt. An uncertain intent is never rerun automatically.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -218,7 +218,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_get",
     description:
-      "Read a recorded run summary plus one bounded sample page, or its literal uncertain/absent state. Only an exact 0.3.2 attested receipt is readable. Advance sample_offset while sample_page.has_more is true.",
+      "Read a recorded run summary plus one bounded sample page, or its literal uncertain/absent state. This development source reads only an exact 0.3.3 receipt identity. Advance sample_offset while sample_page.has_more is true.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -250,7 +250,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
   app.registerTool({
     name: "chrono_run_receipt_get",
     description:
-      "Read an exact 0.3.2 recorded run by its canonical receipt SHA-256. An older persisted record is unsupported/corrupt. Return factual receipt provenance plus one bounded sample page; advance sample_offset while sample_page.has_more is true.",
+      "Read an exact 0.3.3 recorded run by its canonical receipt SHA-256. Another persisted version is unsupported/corrupt. Return factual receipt provenance plus one bounded sample page; advance sample_offset while sample_page.has_more is true.",
     inputSchema: {
       type: "object",
       additionalProperties: false,

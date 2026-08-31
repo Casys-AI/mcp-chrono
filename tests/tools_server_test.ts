@@ -5,6 +5,13 @@ import { createChronoApp } from "../src/server.ts";
 import { MAX_CASE_JSON_BYTES } from "../src/domain/contract.ts";
 import { PROVIDER_VERSION } from "../src/domain/types.ts";
 import { sha256Utf8 } from "../src/domain/sha.ts";
+import {
+  CHRONO_RESULT_SCHEMA_IDS,
+  CHRONO_RUN_RECORD_VIEWER_URI,
+  CHRONO_VIEW_APP_MANIFEST,
+  CHRONO_VIEW_APP_MANIFEST_JSON,
+  CHRONO_VIEW_APP_MANIFEST_URI,
+} from "../src/ui/app-contract.ts";
 import { caseData, FakeRunner } from "./test-helpers.ts";
 
 const proto = "2026-07-28";
@@ -180,14 +187,16 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
       (tools.find((tool) => tool.name === "chrono_manifest_get")?._meta) ?? undefined,
       undefined,
     );
-    const runRecordUri = "ui://mcp-chrono/run-record-viewer";
-    for (
-      const name of [
+    const runRecordUri = CHRONO_RUN_RECORD_VIEWER_URI;
+    const resultSchemas = new Map([
+      [
         "chrono_run_prescribed_kinematics",
-        "chrono_run_get",
-        "chrono_run_receipt_get",
-      ]
-    ) {
+        CHRONO_RESULT_SCHEMA_IDS.prescribedRun,
+      ],
+      ["chrono_run_get", CHRONO_RESULT_SCHEMA_IDS.recordedLookup],
+      ["chrono_run_receipt_get", CHRONO_RESULT_SCHEMA_IDS.receiptLookup],
+    ]);
+    for (const [name, resultSchema] of resultSchemas) {
       const tool = tools.find((entry) => entry.name === name);
       assert(tool, name);
       assertEquals(
@@ -195,19 +204,42 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
           .resourceUri,
         runRecordUri,
       );
+      assertEquals(
+        (tool.outputSchema as Record<string, unknown>).$id,
+        resultSchema,
+      );
     }
     const resources = await rpc(port, 21, "resources/list");
     assertEquals(resources.error, undefined);
     const listed = resources.result?.resources as Array<Record<string, unknown>>;
-    assertEquals(listed.length, 1);
-    assertEquals(listed[0]?.uri, runRecordUri);
-    assertEquals(listed[0]?.mimeType, "text/html;profile=mcp-app");
+    assertEquals(listed.length, 2);
+    assert(
+      listed.some((entry) =>
+        entry.uri === runRecordUri &&
+        entry.mimeType === "text/html;profile=mcp-app"
+      ),
+    );
+    assert(
+      listed.some((entry) =>
+        entry.uri === CHRONO_VIEW_APP_MANIFEST_URI &&
+        entry.mimeType === "application/json"
+      ),
+    );
     const resource = await rpc(port, 22, "resources/read", { uri: runRecordUri });
     assertEquals(resource.error, undefined);
     const html = ((resource.result?.contents as Array<Record<string, unknown>>)[0]
       ?.text) as string;
     assertStringIncludes(html, "<!doctype html>");
-    assertStringIncludes(html, "chrono.run-summary");
+    assertStringIncludes(html, "chrono.recorded-run");
+    const appManifestResource = await rpc(port, 23, "resources/read", {
+      uri: CHRONO_VIEW_APP_MANIFEST_URI,
+    });
+    assertEquals(appManifestResource.error, undefined);
+    const appManifestText = ((appManifestResource.result?.contents as Array<
+      Record<string, unknown>
+    >)[0]?.text) as string;
+    assertEquals(appManifestText, CHRONO_VIEW_APP_MANIFEST_JSON);
+    assertEquals(JSON.parse(appManifestText), CHRONO_VIEW_APP_MANIFEST);
     assertEquals(
       (caseSubmitTool.inputSchema as Record<string, unknown>).required,
       ["case_json"],

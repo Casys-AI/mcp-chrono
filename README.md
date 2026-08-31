@@ -1,10 +1,11 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. Version **0.3.2** is published on JSR and as a
-public Linux/amd64 OCI image. It is a deliberately breaking durable-record release: it
-accepts only exact 0.3.2 attested run receipts. An older persisted request record is
-fail-closed as unsupported/corrupt; bytes on disk are neither rewritten nor relabelled.
+kinematics using Project Chrono 10.0.0. Source version **0.3.3** is an unreleased,
+deliberately breaking development line. It accepts only exact 0.3.3 attested run
+receipts; an older persisted request record is fail-closed as unsupported/corrupt and
+its bytes are neither rewritten nor relabelled. Version 0.3.2 remains the latest
+published JSR and public Linux/amd64 OCI release.
 
 The immutable version tag `ghcr.io/casys-ai/mcp-chrono:0.3.2` and matching commit tag
 `ghcr.io/casys-ai/mcp-chrono:sha-18e118453111391eae632f8f5ec737e6c9f04847` both resolve
@@ -185,10 +186,18 @@ deno task build:ui
 deno task check:ui:bundle
 ```
 
-There is no published `@casys/mcp-view` fallback. Missing roots fail closed. The default
-viewer surface is one compact semantic run record; sample page, execution facts and
-receipt provenance stay host-selectable. `execution_state` and `kinematics_exit` remain
-factual engine state, not a proof or product verdict.
+There is no published `@casys/mcp-view` fallback. Missing roots fail closed. The server
+also exposes the exact serialized app manifest at `ui://mcp-chrono/app-manifest`. The
+manifest accepts only `viewer.session.apply` with
+`io.casys.mcp-chrono.recorded-run-session/1.0`. That provider-owned envelope joins the
+exact request, case, outcome, and receipt fingerprints; it does not presume a Digital
+Thread project or operation shape. `chrono-receipt:sha256:<digest>` is a receipt
+identity URI, not an advertised dynamic resource.
+
+The whole view contains one business component, `chrono.recorded-run`: one compact, flat
+recorded-run card with literal sample range, execution state, native kinematics exit,
+and receipt provenance. There is no sample/receipt subcatalog and no inferred limit,
+tone, proof, or product verdict.
 
 ## Docker and VPS deployment
 

@@ -15,6 +15,7 @@ import {
   PROVIDER_VERSION,
   RECEIPT_SCHEMA_ID,
 } from "../domain/types.ts";
+import { CHRONO_RESULT_SCHEMA_IDS } from "../ui/app-contract.ts";
 
 const sha256Schema = { type: "string", pattern: "^[a-f0-9]{64}$" } as const;
 const requestIdSchema = {
@@ -399,6 +400,7 @@ export const caseGetOutputSchema = {
 } as const;
 
 export const runOutputSchema = {
+  $id: CHRONO_RESULT_SCHEMA_IDS.prescribedRun,
   oneOf: [{
     type: "object",
     additionalProperties: false,
@@ -412,6 +414,7 @@ export const runOutputSchema = {
 } as const;
 
 export const runGetOutputSchema = {
+  $id: CHRONO_RESULT_SCHEMA_IDS.recordedLookup,
   oneOf: [
     {
       type: "object",
@@ -444,6 +447,7 @@ export const runGetOutputSchema = {
 } as const;
 
 export const receiptGetOutputSchema = {
+  $id: CHRONO_RESULT_SCHEMA_IDS.receiptLookup,
   oneOf: [{
     type: "object",
     additionalProperties: false,

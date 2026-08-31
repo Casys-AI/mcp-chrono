@@ -197,7 +197,7 @@ export class FileChronoStore {
         const input = await this.reopenPersistedCase(caseSha256);
         const validated = await validatePersistedRecord(record, requestId, input);
         // A power loss can occur after a request record is atomically published
-        // but before its secondary receipt index. Only an exact 0.3.2 attested
+        // but before its secondary receipt index. Only an exact 0.3.3 attested
         // record contains the receipt identity needed to derive that index.
         await this.publishReceiptIndex(
           validated,

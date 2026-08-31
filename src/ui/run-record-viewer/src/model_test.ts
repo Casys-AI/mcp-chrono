@@ -1,4 +1,9 @@
-import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert";
+import {
+  assertEquals,
+  assertRejects,
+  assertStringIncludes,
+  assertThrows,
+} from "@std/assert";
 import {
   advertisedComponentCatalog,
   CASYS_SURFACE_CONTEXT_KEY,
@@ -6,6 +11,19 @@ import {
 } from "@casys/mcp-view-components";
 import type { PreactSurfaceContext } from "@casys/mcp-view-components/preact";
 import { PROVIDER_VERSION } from "../../../domain/types.ts";
+import {
+  CHRONO_VIEW_APP_MANIFEST,
+  CHRONO_VIEW_APP_MANIFEST_JSON,
+  CHRONO_VIEWER_SESSION_SCHEMA,
+  VIEWER_SESSION_APPLY_ACTION,
+} from "../../app-contract.ts";
+import {
+  chronoOutcomeFingerprint,
+  chronoReceiptFingerprint,
+  chronoReceiptIdentityUri,
+  chronoRecordedSessionFingerprint,
+  parseChronoViewerSession,
+} from "../../../viewer-session.ts";
 import { CHRONO_APP_INFO, renderDisplayState, resolveChronoSurface } from "./app.ts";
 import {
   CHRONO_COMPONENT_KEYS,
@@ -13,13 +31,16 @@ import {
   CHRONO_RUN_RECORD_SURFACE,
 } from "./components.tsx";
 import {
+  type ChronoDurableRunRecord,
   type ChronoRunRecordView,
   type ChronoRunView,
+  chronoRunViewFromDurableRecord,
   displayStateFromToolResult,
   formatExactNumber,
   parseChronoRunView,
   toolErrorMessage,
 } from "./model.ts";
+import { createBufferedSessionReceiver } from "./session-receiver.ts";
 
 const CASE_SHA = "a".repeat(64);
 const RECEIPT_SHA = "b".repeat(64);
@@ -114,6 +135,69 @@ const uncertain = {
 const absent = { ok: true, state: "absent" };
 const componentContext = {} as unknown as PreactSurfaceContext<ChronoRunView>;
 
+async function durableRecordFixture(): Promise<ChronoDurableRunRecord> {
+  const output = {
+    engine: recorded.observation.engine,
+    runtime: recorded.observation.runtime,
+    samples: structuredClone(recorded.sample_page.samples),
+    not_evaluated: recorded.observation.not_evaluated,
+    execution_state: recorded.observation.execution_state,
+    kinematics_exit: recorded.observation.kinematics_exit,
+  };
+  const outcomeFingerprint = await chronoOutcomeFingerprint(output);
+  const receiptSeed = {
+    ...recorded.receipt,
+    receipt_sha256: "0".repeat(64),
+    outcome_sha256: outcomeFingerprint.slice("sha256:".length),
+  };
+  const receiptFingerprint = await chronoReceiptFingerprint(receiptSeed);
+  return {
+    request: recorded.request,
+    case_uri: recorded.case_uri,
+    recorded_at: recorded.recorded_at,
+    output,
+    receipt: {
+      ...receiptSeed,
+      receipt_sha256: receiptFingerprint.slice("sha256:".length),
+    },
+  };
+}
+
+async function viewerSessionFixture() {
+  const record = await durableRecordFixture();
+  const receiptFingerprint = "sha256:" + record.receipt.receipt_sha256;
+  const session = {
+    schemaVersion: CHRONO_VIEWER_SESSION_SCHEMA,
+    kind: "chrono.recorded-run",
+    basis: { sessionFingerprint: "sha256:" + "0".repeat(64) },
+    anchor: {
+      kind: "chrono-recorded-run",
+      id: record.request.request_id,
+      uri: chronoReceiptIdentityUri(record.receipt.receipt_sha256),
+      fingerprint: receiptFingerprint,
+    },
+    provenance: {
+      kind: "mcp-chrono-recorded-run",
+      server: { package: "@casys/mcp-chrono", version: PROVIDER_VERSION },
+      requestId: record.request.request_id,
+      caseArtifact: {
+        uri: record.case_uri,
+        fingerprint: "sha256:" + record.request.case_sha256,
+      },
+      outcomeFingerprint: "sha256:" + record.receipt.outcome_sha256,
+      receiptArtifact: {
+        uri: chronoReceiptIdentityUri(record.receipt.receipt_sha256),
+        fingerprint: receiptFingerprint,
+      },
+    },
+    projection: { status: "available", record },
+  };
+  session.basis.sessionFingerprint = await chronoRecordedSessionFingerprint(
+    session,
+  );
+  return session;
+}
+
 Deno.test("parser accepts run, run_get recorded and receipt_get closed records", () => {
   assertEquals(parseChronoRunView(runResult), {
     kind: "recorded",
@@ -136,6 +220,107 @@ Deno.test("parser preserves literal uncertain and absent states", () => {
     intent: uncertain.intent,
   });
   assertEquals(parseChronoRunView(absent), { kind: "absent" });
+});
+
+Deno.test("recorded viewer session joins anchor, receipt and exact outcome", async () => {
+  const session = await viewerSessionFixture();
+  const parsed = await parseChronoViewerSession(session);
+  assertEquals(parsed.projection.status, "available");
+  if (parsed.projection.status !== "available") {
+    throw new Error("expected available recorded session");
+  }
+  const view = chronoRunViewFromDurableRecord(parsed.projection.record);
+  assertEquals(view.kind, "recorded");
+  if (view.kind === "recorded") {
+    assertEquals(view.record.request.request_id, "wire-paged");
+    assertEquals(view.record.observation.sample_count, 2);
+    assertEquals(
+      view.record.observation.sample_time_range_s.last,
+      0.9999999999999999,
+    );
+  }
+});
+
+Deno.test("re-signed session substitutions cannot replace recorded bytes", async () => {
+  const originalOutcome = await viewerSessionFixture();
+  const changedOutcome = {
+    ...originalOutcome,
+    basis: { ...originalOutcome.basis },
+    projection: {
+      ...originalOutcome.projection,
+      record: {
+        ...originalOutcome.projection.record,
+        output: {
+          ...originalOutcome.projection.record.output,
+          samples: [
+            originalOutcome.projection.record.output.samples[0],
+            {
+              ...originalOutcome.projection.record.output.samples[1],
+              time_s: 0.75,
+            },
+          ],
+        },
+      },
+    },
+  };
+  changedOutcome.basis.sessionFingerprint = await chronoRecordedSessionFingerprint(
+    changedOutcome,
+  );
+  await assertRejects(
+    () => parseChronoViewerSession(changedOutcome),
+    TypeError,
+    "outcome SHA-256",
+  );
+
+  const changedAnchor = await viewerSessionFixture();
+  const substituted = "e".repeat(64);
+  changedAnchor.anchor.uri = chronoReceiptIdentityUri(substituted);
+  changedAnchor.anchor.fingerprint = "sha256:" + substituted;
+  changedAnchor.provenance.receiptArtifact = {
+    uri: changedAnchor.anchor.uri,
+    fingerprint: changedAnchor.anchor.fingerprint,
+  };
+  changedAnchor.basis.sessionFingerprint = await chronoRecordedSessionFingerprint(
+    changedAnchor,
+  );
+  await assertRejects(
+    () => parseChronoViewerSession(changedAnchor),
+    TypeError,
+    "recorded receipt",
+  );
+});
+
+Deno.test("viewer session receiver preserves pre-connect FIFO delivery", async () => {
+  let listener:
+    | ((payload: { readonly data: unknown }) => void)
+    | undefined;
+  const receiver = createBufferedSessionReceiver<string>({
+    events: {
+      on(action, next) {
+        assertEquals(action, VIEWER_SESSION_APPLY_ACTION);
+        listener = next;
+        return () => {
+          listener = undefined;
+        };
+      },
+    },
+    action: VIEWER_SESSION_APPLY_ACTION,
+    map: (value) => String(value),
+    onError: (error) => {
+      throw error;
+    },
+  });
+  listener?.({ data: "first" });
+  listener?.({ data: "second" });
+  const observed: string[] = [];
+  await receiver.activate((value) => {
+    observed.push(value);
+  });
+  listener?.({ data: "third" });
+  await receiver.drain();
+  assertEquals(observed, ["first", "second", "third"]);
+  receiver.dispose();
+  assertEquals(listener, undefined);
 });
 
 Deno.test("parser keeps the exact terminal sample time and does not relabel it", () => {
@@ -304,27 +489,38 @@ Deno.test("tool results map errors, json-text fallback and empty content", () =>
   );
 });
 
-Deno.test("default surface is one compact run-summary card", () => {
+Deno.test("default surface is exactly one recorded-run business component", () => {
   const catalog = advertisedComponentCatalog(CHRONO_COMPONENT_REGISTRY);
-  assertEquals(
-    Object.keys(catalog.components).toSorted(),
-    [
-      CHRONO_COMPONENT_KEYS.executionFacts,
-      CHRONO_COMPONENT_KEYS.receiptProvenance,
-      CHRONO_COMPONENT_KEYS.runSummary,
-      CHRONO_COMPONENT_KEYS.samplePage,
-    ].toSorted(),
-  );
+  assertEquals(Object.keys(catalog.components), [
+    CHRONO_COMPONENT_KEYS.recordedRun,
+  ]);
   assertEquals(catalog.defaultSurface, CHRONO_RUN_RECORD_SURFACE);
   assertEquals(CHRONO_RUN_RECORD_SURFACE.layout, { type: "stack", gap: "sm" });
   assertEquals(CHRONO_RUN_RECORD_SURFACE.components, [{
-    id: "run-summary",
-    component: CHRONO_COMPONENT_KEYS.runSummary,
+    id: "recorded-run",
+    component: CHRONO_COMPONENT_KEYS.recordedRun,
   }]);
   assertEquals(CHRONO_APP_INFO, {
-    name: "casys-chrono-run-record",
+    name: "io.casys.mcp-chrono.run-record",
     version: PROVIDER_VERSION,
   });
+  assertEquals(CHRONO_VIEW_APP_MANIFEST.app, {
+    id: "io.casys.mcp-chrono.run-record",
+    title: "Chrono Recorded Run",
+    version: PROVIDER_VERSION,
+  });
+  assertEquals(
+    CHRONO_VIEW_APP_MANIFEST.resources[0].acceptedActions,
+    [VIEWER_SESSION_APPLY_ACTION],
+  );
+  assertEquals(
+    CHRONO_VIEW_APP_MANIFEST.resources[0].sessionSchemas,
+    [CHRONO_VIEWER_SESSION_SCHEMA],
+  );
+  assertEquals(
+    CHRONO_VIEW_APP_MANIFEST_JSON,
+    JSON.stringify(CHRONO_VIEW_APP_MANIFEST) + "\n",
+  );
 });
 
 Deno.test("a malformed host surface is recoverable by a later valid context", () => {
@@ -336,8 +532,8 @@ Deno.test("a malformed host surface is recoverable by a later valid context", ()
       surface: {
         layout: { type: "grid", columns: 0 },
         components: [{
-          id: "run-summary",
-          component: CHRONO_COMPONENT_KEYS.runSummary,
+          id: "recorded-run",
+          component: CHRONO_COMPONENT_KEYS.recordedRun,
         }],
       },
     },
@@ -361,6 +557,7 @@ Deno.test("compact default source does not import invented verdict or bound widg
   );
   assertEquals(source.includes("LimitGauge"), false);
   assertEquals(source.includes("ElementVerdict"), false);
+  assertEquals(source.includes('tone: "'), false);
   assertEquals(source.includes("pass/fail"), false);
 });
 
@@ -377,12 +574,12 @@ Deno.test({
           root.querySelector("[data-component]")?.getAttribute(
             "data-component",
           ),
-          CHRONO_COMPONENT_KEYS.runSummary,
+          CHRONO_COMPONENT_KEYS.recordedRun,
         );
         const card = root.querySelector(".mcp-view-semantic-element");
         assertEquals(card?.getAttribute("data-density"), "card");
         assertEquals(card?.getAttribute("data-semantic-domain"), "chrono");
-        assertEquals(card?.getAttribute("data-semantic-kind"), "run-record");
+        assertEquals(card?.getAttribute("data-semantic-kind"), "recorded-run");
         assertEquals(card?.hasAttribute("data-tone"), false);
         assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
         assertEquals(root.querySelector(".mcp-view-limit-gauge"), null);

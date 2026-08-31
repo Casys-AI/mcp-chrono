@@ -1,4 +1,9 @@
-import { createMcpApp, defineView } from "@casys/mcp-view";
+import {
+  type AppHandle,
+  createComposeEventClient,
+  createMcpApp,
+  defineView,
+} from "@casys/mcp-view";
 import {
   activeComponentSurface,
   applySurfaceContext,
@@ -14,19 +19,26 @@ import {
   StateMessage,
 } from "@casys/mcp-view-components/preact/components";
 import { createElement, render } from "preact";
-import { PROVIDER_VERSION } from "../../../domain/types.ts";
+import {
+  CHRONO_VIEW_APP_MANIFEST,
+  CHRONO_VIEWER_SESSION_SCHEMA,
+  VIEWER_SESSION_APPLY_ACTION,
+} from "../../app-contract.ts";
+import { parseChronoViewerSession } from "../../../viewer-session.ts";
 import { CHRONO_COMPONENT_REGISTRY } from "./components.tsx";
 import {
   type ChronoRunView,
+  chronoRunViewFromDurableRecord,
   type DisplayState,
   displayStateFromToolResult,
 } from "./model.ts";
+import { createBufferedSessionReceiver } from "./session-receiver.ts";
 
 type RunRecordViewerState = Record<string, never>;
 
 export const CHRONO_APP_INFO = {
-  name: "casys-chrono-run-record",
-  version: PROVIDER_VERSION,
+  name: CHRONO_VIEW_APP_MANIFEST.app.id,
+  version: CHRONO_VIEW_APP_MANIFEST.app.version,
 } as const;
 
 /** Start the MCP-owned Chrono run-record projection. */
@@ -43,6 +55,37 @@ export async function startChronoRunRecordApp(
 
   const reportError = (error: unknown): void => {
     console.error("[mcp-chrono] Run-record projection failed", error);
+  };
+
+  const sessionEvents = createComposeEventClient();
+  const sessionReceiver = createBufferedSessionReceiver<DisplayState>({
+    events: sessionEvents,
+    action: VIEWER_SESSION_APPLY_ACTION,
+    async map(value) {
+      try {
+        const session = await parseChronoViewerSession(value);
+        if (session.projection.status === "available") {
+          return chronoRunViewFromDurableRecord(session.projection.record);
+        }
+        return {
+          kind: session.projection.status,
+          reason: session.projection.reason,
+        };
+      } catch (error) {
+        return {
+          kind: "error",
+          message: `Rejected ${CHRONO_VIEWER_SESSION_SCHEMA} session: ${
+            errorMessage(error)
+          }`,
+        };
+      }
+    },
+    onError: reportError,
+  });
+
+  const disposeSessionChannel = (): void => {
+    sessionReceiver.dispose();
+    sessionEvents.destroy();
   };
 
   const disposeSurface = async (): Promise<void> => {
@@ -110,40 +153,53 @@ export async function startChronoRunRecordApp(
     onLeave: disposeSurface,
   });
 
-  const handle = await createMcpApp<RunRecordViewerState>({
-    info: CHRONO_APP_INFO,
-    root,
-    strict: true,
-    views: { status, surface },
-    initialView: "status",
-    initialArgs: { kind: "loading" } satisfies DisplayState,
-    initialState: state,
-    capabilities: {
-      experimental: componentCatalogCapabilities(CHRONO_COMPONENT_REGISTRY),
-    },
-    onToolInputPartial: async (_params, app) => {
-      await app.navigate("status", { kind: "loading" } satisfies DisplayState);
-    },
-    onToolResult: async (result, app) => {
-      try {
-        await showDisplayState(app.navigate, displayStateFromToolResult(result));
-      } catch (error) {
+  let handle: AppHandle<RunRecordViewerState>;
+  try {
+    handle = await createMcpApp<RunRecordViewerState>({
+      info: CHRONO_APP_INFO,
+      root,
+      strict: true,
+      views: { status, surface },
+      initialView: "status",
+      initialArgs: { kind: "loading" } satisfies DisplayState,
+      initialState: state,
+      capabilities: {
+        experimental: componentCatalogCapabilities(CHRONO_COMPONENT_REGISTRY),
+      },
+      onToolInputPartial: async (_params, app) => {
         await app.navigate(
           "status",
-          {
-            kind: "error",
-            message: errorMessage(error),
-          } satisfies DisplayState,
+          { kind: "loading" } satisfies DisplayState,
         );
-      }
-    },
-    onTeardown: async () => {
-      removeHostContextListener?.();
-      removeHostContextListener = undefined;
-      currentResult = undefined;
-      await disposeSurface();
-    },
-  });
+      },
+      onToolResult: async (result, app) => {
+        try {
+          await showDisplayState(
+            app.navigate,
+            displayStateFromToolResult(result),
+          );
+        } catch (error) {
+          await app.navigate(
+            "status",
+            {
+              kind: "error",
+              message: errorMessage(error),
+            } satisfies DisplayState,
+          );
+        }
+      },
+      onTeardown: async () => {
+        removeHostContextListener?.();
+        removeHostContextListener = undefined;
+        currentResult = undefined;
+        disposeSessionChannel();
+        await disposeSurface();
+      },
+    });
+  } catch (error) {
+    disposeSessionChannel();
+    throw error;
+  }
 
   const onHostContextChanged = (): void => {
     applySurfaceContext(handle.ctx.hostContext, document.documentElement);
@@ -158,6 +214,8 @@ export async function startChronoRunRecordApp(
       onHostContextChanged,
     );
   };
+
+  await sessionReceiver.activate((next) => showDisplayState(handle.navigate, next));
 }
 
 export type ChronoSurfaceResolution =
@@ -216,6 +274,18 @@ export function renderDisplayState(state: DisplayState): HTMLElement {
       );
     case "error":
       return message(state.message, "danger", "error");
+    case "unresolved":
+      return message(
+        state.reason,
+        "warning",
+        "Recorded Chrono run unresolved",
+      );
+    case "unavailable":
+      return message(
+        state.reason,
+        "warning",
+        "Recorded Chrono run unavailable",
+      );
     case "recorded":
     case "uncertain":
     case "absent":

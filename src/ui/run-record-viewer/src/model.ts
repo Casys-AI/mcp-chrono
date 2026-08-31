@@ -103,6 +103,16 @@ export interface ChronoObservationSummary {
   readonly sample_time_range_s: { readonly first: number; readonly last: number };
 }
 
+/** Complete durable observation used only by the recorded session contract. */
+export interface ChronoFullObservation {
+  readonly engine: { readonly name: "Project Chrono"; readonly version: string };
+  readonly runtime: ChronoRunReceipt["runtime"];
+  readonly samples: readonly ChronoKinematicsSample[];
+  readonly not_evaluated: typeof NOT_EVALUATED;
+  readonly execution_state: ChronoExecutionState;
+  readonly kinematics_exit: ChronoKinematicsExit;
+}
+
 export interface ChronoRunRecordView {
   readonly request: ChronoRunRequest;
   readonly case_uri: string;
@@ -110,6 +120,15 @@ export interface ChronoRunRecordView {
   readonly receipt: ChronoRunReceipt;
   readonly observation: ChronoObservationSummary;
   readonly sample_page: ChronoSamplePage;
+}
+
+/** Exact provider-owned record.json projection transported by viewer.session.apply. */
+export interface ChronoDurableRunRecord {
+  readonly request: ChronoRunRequest;
+  readonly case_uri: string;
+  readonly recorded_at: string;
+  readonly output: ChronoFullObservation;
+  readonly receipt: ChronoRunReceipt;
 }
 
 export type ChronoRunView =
@@ -125,6 +144,8 @@ export type DisplayState =
   | { readonly kind: "loading" }
   | { readonly kind: "empty" }
   | { readonly kind: "error"; readonly message: string }
+  | { readonly kind: "unresolved"; readonly reason: string }
+  | { readonly kind: "unavailable"; readonly reason: string }
   | ChronoRunView;
 
 export function isRecordedRun(
@@ -149,7 +170,7 @@ export function parseChronoRunView(value: unknown): ChronoRunView {
   }
   if (root.state === "recorded") {
     exactKeys(root, ["ok", "state", "record"], "structuredContent");
-    return { kind: "recorded", record: parseRecord(root.record) };
+    return { kind: "recorded", record: parseChronoRunRecordView(root.record) };
   }
   if (root.state !== undefined) {
     throw new TypeError("Chrono run state must be recorded, uncertain or absent.");
@@ -162,11 +183,11 @@ export function parseChronoRunView(value: unknown): ChronoRunView {
     return {
       kind: "recorded",
       replayed: root.replayed,
-      record: parseRecord(root.record),
+      record: parseChronoRunRecordView(root.record),
     };
   }
   exactKeys(root, ["ok", "record"], "structuredContent");
-  return { kind: "recorded", record: parseRecord(root.record) };
+  return { kind: "recorded", record: parseChronoRunRecordView(root.record) };
 }
 
 export function displayStateFromToolResult(value: unknown): DisplayState {
@@ -207,7 +228,7 @@ export function formatExactVector(values: readonly number[]): string {
   return `[${values.map(formatExactNumber).join(", ")}]`;
 }
 
-function parseRecord(value: unknown): ChronoRunRecordView {
+export function parseChronoRunRecordView(value: unknown): ChronoRunRecordView {
   const root = exactRecord(value, [
     "request",
     "case_uri",
@@ -245,6 +266,83 @@ function parseRecord(value: unknown): ChronoRunRecordView {
     throw new TypeError("Observation sample_count differs from sample_page.total.");
   }
   return { request, case_uri, recorded_at, receipt, observation, sample_page };
+}
+
+/** Parse one complete durable record without weakening its provider joins. */
+export function parseChronoDurableRunRecord(
+  value: unknown,
+): ChronoDurableRunRecord {
+  const root = exactRecord(value, [
+    "request",
+    "case_uri",
+    "recorded_at",
+    "output",
+    "receipt",
+  ], "recorded run");
+  const request = parseRequest(root.request, "recorded run.request");
+  const case_uri = caseUri(root.case_uri, "recorded run.case_uri");
+  const recorded_at = nonEmptyString(
+    root.recorded_at,
+    "recorded run.recorded_at",
+  );
+  const output = parseChronoFullObservation(root.output);
+  const receipt = parseReceipt(root.receipt);
+  assertRequestCaseUri(request, case_uri, "recorded run");
+  if (
+    receipt.request_id !== request.request_id ||
+    receipt.case_sha256 !== request.case_sha256 ||
+    receipt.recorded_at !== recorded_at
+  ) {
+    throw new TypeError(
+      "Recorded receipt identity differs from its durable run record.",
+    );
+  }
+  if (
+    receipt.runtime.binding !== output.runtime.binding ||
+    receipt.runtime.python_version !== output.runtime.python_version ||
+    receipt.execution_state !== output.execution_state ||
+    receipt.kinematics_exit.raw_code !== output.kinematics_exit.raw_code ||
+    receipt.kinematics_exit.raw_name !== output.kinematics_exit.raw_name
+  ) {
+    throw new TypeError(
+      "Recorded receipt execution facts differ from the durable outcome.",
+    );
+  }
+  return { request, case_uri, recorded_at, output, receipt };
+}
+
+/** Project the exact durable record to the existing bounded one-object view. */
+export function chronoRunViewFromDurableRecord(
+  record: ChronoDurableRunRecord,
+): ChronoRunView {
+  const samples = record.output.samples;
+  const first = samples[0]!;
+  const last = samples.at(-1)!;
+  const pageSamples = samples.slice(0, 16);
+  const view: ChronoRunRecordView = {
+    request: record.request,
+    case_uri: record.case_uri,
+    recorded_at: record.recorded_at,
+    receipt: record.receipt,
+    observation: {
+      engine: record.output.engine,
+      runtime: record.output.runtime,
+      execution_state: record.output.execution_state,
+      kinematics_exit: record.output.kinematics_exit,
+      not_evaluated: record.output.not_evaluated,
+      sample_count: samples.length,
+      sample_time_range_s: { first: first.time_s, last: last.time_s },
+    },
+    sample_page: {
+      offset: 0,
+      limit: 16,
+      total: samples.length,
+      returned: pageSamples.length,
+      has_more: pageSamples.length < samples.length,
+      samples: pageSamples,
+    },
+  };
+  return { kind: "recorded", record: parseChronoRunRecordView(view) };
 }
 
 function parseIntent(value: unknown): ChronoRunIntent {
@@ -348,6 +446,67 @@ function parseReceipt(value: unknown): ChronoRunReceipt {
     kinematics_exit: kinematicsExit(
       root.kinematics_exit,
       "receipt.kinematics_exit",
+    ),
+  };
+}
+
+export function parseChronoFullObservation(
+  value: unknown,
+): ChronoFullObservation {
+  const root = exactRecord(value, [
+    "engine",
+    "runtime",
+    "samples",
+    "not_evaluated",
+    "execution_state",
+    "kinematics_exit",
+  ], "recorded outcome");
+  const engine = exactRecord(
+    root.engine,
+    ["name", "version"],
+    "recorded outcome.engine",
+  );
+  if (engine.name !== "Project Chrono" || engine.version !== CHRONO_VERSION) {
+    throw new TypeError(
+      "recorded outcome.engine is not Project Chrono 10.0.0.",
+    );
+  }
+  if (!Array.isArray(root.samples)) {
+    throw new TypeError("recorded outcome.samples must be an array.");
+  }
+  if (
+    root.samples.length < 1 || root.samples.length > 512 ||
+    Object.keys(root.samples).length !== root.samples.length
+  ) {
+    throw new TypeError(
+      "recorded outcome.samples must be a dense array of 1 through 512 samples.",
+    );
+  }
+  const samples = root.samples.map((sample, index) =>
+    parseSample(sample, `recorded outcome.samples[${index}]`)
+  );
+  if (samples[0]!.time_s !== 0) {
+    throw new TypeError("recorded outcome.samples must begin at t=0.");
+  }
+  for (let index = 1; index < samples.length; index++) {
+    if (samples[index]!.time_s <= samples[index - 1]!.time_s) {
+      throw new TypeError(
+        "recorded outcome sample times must be strictly increasing.",
+      );
+    }
+  }
+  return {
+    engine: { name: "Project Chrono", version: CHRONO_VERSION },
+    runtime: parseRuntime(root.runtime, "recorded outcome.runtime"),
+    samples,
+    not_evaluated: parseNotEvaluated(root.not_evaluated),
+    execution_state: executionState(
+      root.execution_state,
+      "recorded outcome.execution_state",
+    ),
+    kinematics_exit: kinematicsExit(
+      root.kinematics_exit,
+      "recorded outcome.kinematics_exit",
     ),
   };
 }
