@@ -218,6 +218,7 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(!release.includes("--allow-slow-types"));
   assert(!deno.includes("--allow-slow-types"));
   assert(deno.includes("container_entrypoint_test.py"));
+  assert(deno.includes("chrono_worker_test.py"));
   for (const pattern of [".env", ".env.*", "**/.env", "**/.env.*"]) {
     assert(dockerignore.includes(pattern), `missing Docker ignore ${pattern}`);
   }

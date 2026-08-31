@@ -228,11 +228,14 @@ deletes the content-addressed cases and request ledger.
 
 The fixed worker constructs `ChSystemNSC` with zero gravity, collision disabled and one
 `ChLinkMotorRotationAngle` per explicit joint. It adds no separate revolute link. It
-uses an explicit `DoStepKinematics(h)` loop with `h = min(step, target-current)`; it
-does not substitute `DoFrameKinematics`. Native exit data is retained literally. A
-literal `NOT_CONVERGED` is a recorded `execution_state: "not_converged"` observation,
-never a fabricated convergence result. Constraint violation components remain split as
-translation residual metres and quaternion-imaginary rotation residuals.
+uses a bounded, planned `DoStepKinematics(h)` loop: interior indices use
+`min(step, target-current)` and the last planned index consumes the actual positive
+remainder. Published sample times come only from Chrono's `GetChTime()`; they are never
+relabelled to the target. The worker does not substitute `DoFrameKinematics`. Native
+exit data is retained literally. A literal `NOT_CONVERGED` is a recorded
+`execution_state: "not_converged"` observation, never a fabricated convergence result.
+Constraint violation components remain split as translation residual metres and
+quaternion-imaginary rotation residuals.
 
 Native qualification was deliberately run privately on 2026-08-27. The historical
 linux/amd64 probe image was

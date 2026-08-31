@@ -12,7 +12,7 @@
   "tasks": {
     "check": "deno check mod.ts server.ts src/**/*.ts",
     "lint": "deno lint",
-    "test": "deno test -A && python3 -B -m unittest tests/container_entrypoint_test.py",
+    "test": "deno test -A && python3 -B -m unittest tests/container_entrypoint_test.py tests/chrono_worker_test.py",
     "smoke": "deno run -A scripts/smoke.ts",
     "release:check": "deno fmt --check && deno task check && deno task lint && deno task test && deno publish --dry-run"
   },

@@ -65,6 +65,33 @@ def is_not_converged(details):
     return details["raw_name"] == "NOT_CONVERGED"
 
 
+def planned_step_count(duration_s, step_s):
+    # Admitted cases have a binary64 ratio of at most 10000. Underflow of
+    # duration_s/step_s still needs one leftover step of remaining duration.
+    return max(1, math.ceil(duration_s / step_s))
+
+
+def next_kinematics_step_s(current_s, duration_s, step_s, last_planned=False):
+    remaining = duration_s - current_s
+    if remaining <= 0:
+        return 0.0
+    # The last planned index consumes the leftover remainder, even when it is
+    # slightly larger than step_s. Interior indices never exceed step_s.
+    if last_planned:
+        return remaining
+    return min(step_s, remaining)
+
+
+def is_final_logical_step(step_index, planned_steps, current_s, duration_s, step_s):
+    return step_index == planned_steps or next_kinematics_step_s(
+        current_s, duration_s, step_s
+    ) == 0.0
+
+
+def should_store_sample(step_index, sample_every_steps, is_last):
+    return is_last or step_index % sample_every_steps == 0
+
+
 def require_chrono_runtime(chrono):
     missing_symbols = [name for name in REQUIRED_CHRONO_SYMBOLS if not hasattr(chrono, name)]
     motor_type = getattr(chrono, "ChLinkMotorRotationAngle", None)
@@ -160,13 +187,19 @@ def main(case):
             "kinematics_exit": last_exit,
         }
 
-    step_index = 0
-    while float(system.GetChTime()) < case["duration_s"]:
+    duration_s = case["duration_s"]
+    step_s = case["step_s"]
+    sample_every_steps = case["sample_every_steps"]
+    planned_steps = planned_step_count(duration_s, step_s)
+    for step_index in range(1, planned_steps + 1):
         current = float(system.GetChTime())
-        h = min(case["step_s"], case["duration_s"] - current)
+        h = next_kinematics_step_s(
+            current, duration_s, step_s, step_index == planned_steps
+        )
+        if h == 0.0:
+            break
         last_flag = system.DoStepKinematics(h)
         last_exit = exit_details(last_flag)
-        step_index += 1
         current = float(system.GetChTime())
         if is_not_converged(last_exit):
             if current > samples[-1]["time_s"]:
@@ -179,8 +212,13 @@ def main(case):
                 "execution_state": "not_converged",
                 "kinematics_exit": last_exit,
             }
-        if step_index % case["sample_every_steps"] == 0 or math.isclose(current, case["duration_s"], abs_tol=1e-10):
+        is_last = is_final_logical_step(
+            step_index, planned_steps, current, duration_s, step_s
+        )
+        if should_store_sample(step_index, sample_every_steps, is_last):
             collect()
+        if is_last and step_index != planned_steps:
+            break
 
     return {
         "engine": {"name": "Project Chrono", "version": "10.0.0"},

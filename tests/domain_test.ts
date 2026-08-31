@@ -15,6 +15,26 @@ import { caseData, FakeRunner } from "./test-helpers.ts";
 Deno.test("domain validates a closed explicit root-only case", () => {
   assertEquals(validateCase(caseData()).bodies[0].id, "root");
 });
+Deno.test("domain admits the 10000-step cadence-20 schedule", () => {
+  const input = caseData();
+  input.duration_s = 1;
+  input.step_s = 0.0001;
+  input.sample_every_steps = 20;
+  const validated = validateCase(input);
+  assertEquals(validated.duration_s, 1);
+  assertEquals(validated.step_s, 0.0001);
+  assertEquals(validated.sample_every_steps, 20);
+});
+Deno.test("domain admits a ceil-overcount decimal schedule", () => {
+  const input = caseData();
+  input.duration_s = 0.07;
+  input.step_s = 0.01;
+  input.sample_every_steps = 3;
+  const validated = validateCase(input);
+  assertEquals(validated.duration_s, 0.07);
+  assertEquals(validated.step_s, 0.01);
+  assertEquals(validated.sample_every_steps, 3);
+});
 Deno.test("runtime template is a valid closed 1.0 case", () => {
   assertEquals(validateCase(CASE_TEMPLATE).joints[0].id, "hinge");
   assertEquals(CASE_JSON_SCHEMA.$id, "chrono-prescribed-kinematics-case/1.0");

@@ -28,6 +28,25 @@ Deno.test("worker source names the fixed Chrono 10 kinematic API", async () => {
   assertStringIncludes(source, "last_flag = system.DoStepKinematics(0.0)");
   assertStringIncludes(source, "Submitted poses are zero-angle references");
   assertStringIncludes(source, '0: "NOT_CONVERGED"');
+  assertStringIncludes(source, "next_kinematics_step_s(");
+  assertStringIncludes(source, "planned_step_count(");
+  assertStringIncludes(source, "should_store_sample(");
+  assertStringIncludes(source, "is_final_logical_step(");
+  assertStringIncludes(source, "max(1, math.ceil(duration_s / step_s))");
+  assertStringIncludes(source, "for step_index in range(1, planned_steps + 1):");
+  assertStringIncludes(source, "time_s = float(system.GetChTime())");
+  assertStringIncludes(source, "step_index == planned_steps");
+  assert(!source.includes("published_sample_time_s"));
+  assert(!source.includes("reached_requested_duration"));
+  assert(!source.includes("terminal_time_abs_tol_s"));
+  assert(!source.includes("TERMINAL_ULP_MULTIPLIER"));
+  assert(!source.includes("math.nextafter"));
+  assert(!source.includes("math.isclose"));
+  assert(!source.includes("math.ulp"));
+  assert(!source.includes("collect(terminal="));
+  assert(
+    !source.includes('while float(system.GetChTime()) < case["duration_s"]'),
+  );
 
   const assembled = source.indexOf("last_flag = system.DoStepKinematics(0.0)");
   const initialSample = source.indexOf("    collect()", assembled);
@@ -41,16 +60,42 @@ Deno.test("native Project Chrono integration is explicit opt-in", async () => {
   assertEquals(result.engine.version, "10.0.0");
   assertEquals(result.not_evaluated[0], "collision");
   assertEquals(result.execution_state, "completed");
+  const times = result.samples.map((sample) => sample.time_s);
   assertEquals(result.samples[0].time_s, 0);
-  assertEquals(result.samples.at(-1)?.time_s, input.duration_s);
+  assertEquals(result.samples.length, 11);
+  // Remaining last planned step makes Chrono land on duration factually.
+  assertEquals(times.at(-1), 1);
+  assertEquals(times.filter((time) => time === times.at(-1)).length, 1);
+  assertEquals(new Set(times).size, times.length);
+  assert(!times.includes(0.9999999999999999));
+  for (let index = 1; index < times.length; index++) {
+    assert(times[index] > times[index - 1]);
+  }
   assert(Math.abs(result.samples[0].motors[0].motor_angle_rad ?? NaN) < 1e-9);
   assert(
     Math.abs(
       (result.samples.at(-1)?.motors[0].motor_angle_rad ?? NaN) -
         (input.joints[0].angle_ramp.initial_angle_rad +
-          input.joints[0].angle_ramp.angular_speed_rad_s * input.duration_s),
+          input.joints[0].angle_ramp.angular_speed_rad_s * (times.at(-1) ?? NaN)),
     ) < 1e-6,
   );
+});
+
+Deno.test("native non-dividing duration records the exact terminal tick once", async () => {
+  if (Deno.env.get("CHRONO_NATIVE_INTEGRATION") !== "1") return;
+  const input = oneJointCase();
+  input.step_s = 0.3;
+  const result = (await new ChronoWorkerRunner().run(input, 15_000)).observation;
+  const times = result.samples.map((sample) => sample.time_s);
+  assertEquals(result.execution_state, "completed");
+  assertEquals(result.samples.length, 5);
+  assertEquals(times[0], 0);
+  assertEquals(times[1], 0.3);
+  assertEquals(times[2], 0.6);
+  assertEquals(times[3], 0.8999999999999999);
+  assertEquals(times.at(-1), 1);
+  assertEquals(times.filter((time) => time === times.at(-1)).length, 1);
+  assertEquals(new Set(times).size, times.length);
 });
 
 Deno.test("native t=0 applies the initial angle to zero-angle references", async () => {
