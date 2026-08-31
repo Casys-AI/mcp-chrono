@@ -1,23 +1,20 @@
 # Casys MCP Chrono
 
 `@casys/mcp-chrono` is a small MCP provider for **explicit** prescribed rigid-body
-kinematics using Project Chrono 10.0.0. Source and package version **0.3.2** is the
-release version. It is a deliberately breaking durable-record release: it accepts only
-exact 0.3.2 attested run receipts. An older persisted request record is fail-closed as
-unsupported/corrupt; bytes on disk are neither rewritten nor relabelled.
+kinematics using Project Chrono 10.0.0. Version **0.3.2** is published on JSR and as a
+public Linux/amd64 OCI image. It is a deliberately breaking durable-record release: it
+accepts only exact 0.3.2 attested run receipts. An older persisted request record is
+fail-closed as unsupported/corrupt; bytes on disk are neither rewritten nor relabelled.
 
-JSR and GHCR publication of this tag are separate external transactions. They remain
-conditional on the `v0.3.2` workflow gates (`CHRONO_JSR_RELEASE_ENABLED` and
-`CHRONO_GHCR_RELEASE_ENABLED`) and must be verified independently. Never treat the
-source version as proof that a registry transaction has completed.
+The immutable version tag `ghcr.io/casys-ai/mcp-chrono:0.3.2` and matching commit tag
+`ghcr.io/casys-ai/mcp-chrono:sha-18e118453111391eae632f8f5ec737e6c9f04847` both resolve
+to OCI index `sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557`.
+That index is Linux/amd64 and carries OCI revision
+`18e118453111391eae632f8f5ec737e6c9f04847`. The published JSR server entry point is
+`jsr:@casys/mcp-chrono@0.3.2/server`.
 
-The GHCR path publishes the immutable version tag `ghcr.io/casys-ai/mcp-chrono:0.3.2`
-and the matching commit tag; it never publishes `latest`. After that authorized
-publication is independently verified, resolve and pin the resulting OCI digest. This
-tree does not invent a 0.3.2 digest.
-
-The previous qualified public Linux/amd64 release remains available as a rollback
-identity at 0.3.1:
+The previous qualified public Linux/amd64 release remains available as the 0.3.1
+rollback identity:
 
 ```text
 ghcr.io/casys-ai/mcp-chrono@sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c
@@ -25,9 +22,9 @@ ghcr.io/casys-ai/mcp-chrono@sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a
 
 The previous immutable version tag is `ghcr.io/casys-ai/mcp-chrono:0.3.1`, and the
 previous JSR entry point is `jsr:@casys/mcp-chrono@0.3.1/server`. The checked-in
-operator Compose fallback is deliberately not advanced by this source change. After
-registry verification, set `CHRONO_IMAGE` to the resolved 0.3.2 digest; use the 0.3.1
-digest above only as rollback.
+operator Compose fallback remains deliberately pinned to 0.2.0; set `CHRONO_IMAGE` to
+the published 0.3.2 digest above for an explicit upgrade, and use 0.3.1 only for
+rollback.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
@@ -114,12 +111,11 @@ bounded to a maximum 64-sample page. Objects reject unspecified properties throu
 ## Quick start
 
 The public container is the recommended runtime path. Create a long random bearer token,
-keep the service on host loopback, and preserve `/data`. Use the immutable `0.3.2`
-version tag; after independently verifying the authorized GHCR publication, resolve and
-pin the resulting OCI digest. The previous 0.3.1 digest above is rollback only.
+keep the service on host loopback, and preserve `/data`. Pin the published 0.3.2 OCI
+digest. The previous 0.3.1 digest above is rollback only.
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono:0.3.2
+docker pull ghcr.io/casys-ai/mcp-chrono@sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -127,13 +123,13 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono:0.3.2
+  ghcr.io/casys-ai/mcp-chrono@sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557
 ```
 
 The MCP endpoint is `http://127.0.0.1:3025/mcp`. Requests must carry the same value as
 `Authorization: Bearer <token>`. For a durable deployment, store the token in a
-root-readable secret file rather than shell history and pin the independently verified
-OCI digest of `ghcr.io/casys-ai/mcp-chrono:0.3.2`.
+root-readable secret file rather than shell history and pin the published OCI digest
+above.
 
 ### Run from source
 
@@ -141,9 +137,7 @@ Source execution is primarily for contributors and audits. It requires Python wi
 **exactly** `pychrono` / Project Chrono 10.0.0. Normal tests use an injected fake runner
 and do not assert native execution.
 
-With that exact native runtime available, the 0.3.2 JSR server entry point is as
-follows. Confirm the authorized JSR publication independently before treating this
-command as a registry fact:
+With that exact native runtime available, the published 0.3.2 JSR server entry point is:
 
 ```sh
 deno run -A jsr:@casys/mcp-chrono@0.3.2/server --stdio
@@ -213,11 +207,10 @@ content-addressed cases and request ledger used for idempotency and uncertain-st
 recovery.
 
 `deploy/compose.yaml` is the release operator manifest. Its checked-in fallback remains
-the previously qualified `0.2.0` digest; this change does not invent a 0.3.2 digest.
-After independently verifying the authorized GHCR publication, set `CHRONO_IMAGE` to the
-resolved `0.3.2` digest. The previous qualified `0.3.1` digest above is rollback only.
-It keeps `/data` in the named `chrono-data` volume, binds only `127.0.0.1:3025:3025`,
-drops capabilities and runs without privilege escalation:
+the previously qualified `0.2.0` digest; set `CHRONO_IMAGE` to the published `0.3.2`
+digest above for an explicit upgrade. The previous qualified `0.3.1` digest above is
+rollback only. It keeps `/data` in the named `chrono-data` volume, binds only
+`127.0.0.1:3025:3025`, drops capabilities and runs without privilege escalation:
 
 ```sh
 cd deploy
@@ -274,6 +267,12 @@ smoke remains the oracle for that pruned image, while demo/data paths and module
 depend on those assets are outside this provider's coverage. This is private
 qualification of the named probe image only; it does not make a package or OCI image
 public, published, or license-cleared.
+
+The public `0.3.2` OCI index is
+`sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557`. Its immutable
+`0.3.2` and `sha-18e118453111391eae632f8f5ec737e6c9f04847` tags both resolve to that
+Linux/amd64 index, whose OCI revision is `18e118453111391eae632f8f5ec737e6c9f04847`. JSR
+`@casys/mcp-chrono@0.3.2` was also fresh-imported successfully.
 
 The previous public `0.3.1` OCI index is
 `sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c`; its sole

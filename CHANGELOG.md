@@ -18,11 +18,11 @@
   A pre-receipt 0.2 or attested 0.3.0/0.3.1 record encountered on `/data` fails closed
   as unsupported/corrupt. Bytes on disk are neither migrated, deleted, rewritten nor
   relabelled.
-- Source version, git tag, JSR package and GHCR image are distinct verifiable states.
-  Tagging `v0.3.2` does not by itself complete a registry transaction. JSR and GHCR
-  publication remain conditional on the authorized tag workflow gates and must be
-  verified independently. The previous qualified public Linux/amd64 identity is
-  `sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c`.
+- Published JSR `@casys/mcp-chrono@0.3.2` and public Linux/amd64 OCI index
+  `sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557`. The
+  immutable GHCR `0.3.2` and `sha-18e118453111391eae632f8f5ec737e6c9f04847` tags resolve
+  to that index, whose OCI revision is `18e118453111391eae632f8f5ec737e6c9f04847`; a
+  fresh exact JSR import succeeded.
 
 ## 0.3.1 — 2026-08-28
 

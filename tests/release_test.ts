@@ -160,11 +160,15 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const previousVersion = "0.3.1";
   const previousPublicImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c";
+  const publicReleaseImage =
+    "ghcr.io/casys-ai/mcp-chrono@sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557";
+  const releaseCommit = "18e118453111391eae632f8f5ec737e6c9f04847";
   const releaseImage = `ghcr.io/casys-ai/mcp-chrono:${sourceVersion}`;
   const jsrServer = `jsr:@casys/mcp-chrono@${sourceVersion}/server --stdio`;
   const composeFallbackImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
   const knownReleaseDigests = new Set([
+    "2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557",
     "b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c",
     "373be7bae6fed0518bcea6f8da29ae79259148083fbd3048170fbf52904fb795",
     "39eb29a2ba2de72d2af1fefe0897650674d9bb519f866ec2874472facf71ea5c",
@@ -261,13 +265,20 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(readme.includes(`**${sourceVersion}**`));
   assert(readme.includes(releaseImage));
   assert(readme.includes(jsrServer));
+  assert(readme.includes(publicReleaseImage));
+  assert(readme.includes(`sha-${releaseCommit}`));
   assert(readme.includes(previousPublicImage));
   const collapsedReadme = readme.replaceAll(/\s+/g, " ");
-  assert(collapsedReadme.includes("verified independently"));
-  assert(collapsedReadme.includes("resolve and pin"));
   assert(
     collapsedReadme.includes(
-      "Never treat the source version as proof that a registry transaction has completed.",
+      `OCI revision \`${releaseCommit}\``,
+    ),
+  );
+  assert(collapsedReadme.includes("both resolve to OCI index"));
+  assert(collapsedReadme.includes("fresh-imported successfully"));
+  assert(
+    collapsedReadme.includes(
+      "the source version alone is not a registry fact.",
     ),
   );
   assert(readme.includes("never publishes `latest`"));
@@ -277,8 +288,13 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const releaseEntry = changelog.split("## 0.3.2")[1]?.split("## 0.3.1")[0] ?? "";
   assert(changelog.includes(`## ${sourceVersion} — 2026-08-31`));
   assert(releaseEntry.includes("terminal-tick"));
-  assert(releaseEntry.includes("distinct verifiable states"));
-  assert(!/published jsr/i.test(releaseEntry));
+  assert(releaseEntry.includes(`Published JSR \`@casys/mcp-chrono@${sourceVersion}\``));
+  assert(
+    releaseEntry.includes(
+      publicReleaseImage.replace("ghcr.io/casys-ai/mcp-chrono@", ""),
+    ),
+  );
+  assert(releaseEntry.includes(releaseCommit));
   assert(!/has not happened/i.test(releaseEntry));
   assert(!/source candidate/i.test(releaseEntry));
   for (
@@ -316,6 +332,9 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   }
   assert(security.includes(sourceVersion));
   assert(security.includes(previousVersion));
+  assert(
+    security.includes(publicReleaseImage.replace("ghcr.io/casys-ai/mcp-chrono@", "")),
+  );
   assert(
     security.includes(
       "sha256:b6302001725df4722d84096a51eeff7e7ffeee843690a2ba0cc417191c67683c",
