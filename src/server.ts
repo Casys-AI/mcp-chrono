@@ -2,6 +2,7 @@ import { type AuthOptions, McpApp } from "@casys/mcp-server";
 import { ChronoService } from "./application/service.ts";
 import { PROVIDER_VERSION } from "./domain/types.ts";
 import { registerChronoTools } from "./tools/register.ts";
+import { registerChronoRunRecordViewer } from "./ui/register.ts";
 
 export interface ChronoAppOptions {
   auth?: AuthOptions;
@@ -32,5 +33,6 @@ export function createChronoApp(
     logger: (message) => console.error(`[mcp-chrono] ${message}`),
   });
   registerChronoTools(app, service);
+  registerChronoRunRecordViewer(app);
   return app;
 }

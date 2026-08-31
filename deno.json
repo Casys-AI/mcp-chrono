@@ -7,17 +7,21 @@
   },
   "imports": {
     "@casys/mcp-server": "jsr:@casys/mcp-server@0.26.1",
-    "@std/assert": "jsr:@std/assert@1.0.14"
+    "@std/assert": "jsr:@std/assert@1.0.14",
+    "@std/path": "jsr:@std/path@1.1.6"
   },
+  "exclude": [".deps"],
   "tasks": {
-    "check": "deno check mod.ts server.ts src/**/*.ts",
+    "check": "deno check mod.ts server.ts src/adapters/**/*.ts src/application/**/*.ts src/cli.ts src/client.ts src/server.ts src/domain/**/*.ts src/tools/**/*.ts src/ui/register.ts src/ui/run-record-viewer/build.ts src/ui/run-record-viewer/check-bundle.ts src/ui/run-record-viewer/local-modules.ts src/ui/run-record-viewer/test.ts",
     "lint": "deno lint",
-    "test": "deno test -A && python3 -B -m unittest tests/container_entrypoint_test.py tests/chrono_worker_test.py",
+    "build:ui": "deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/build.ts",
+    "check:ui:bundle": "deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/check-bundle.ts",
+    "test": "deno test -A tests/ && python3 -B -m unittest tests/container_entrypoint_test.py tests/chrono_worker_test.py && deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/test.ts",
     "smoke": "deno run -A scripts/smoke.ts",
-    "release:check": "deno fmt --check && deno task check && deno task lint && deno task test && deno publish --dry-run"
+    "release:check": "deno fmt --check && deno task check && deno task lint && deno task test && deno task check:ui:bundle && deno publish --dry-run"
   },
   "fmt": {
-    "exclude": ["LICENSES"],
+    "exclude": ["LICENSES", "src/ui/dist"],
     "lineWidth": 88,
     "indentWidth": 2,
     "singleQuote": false

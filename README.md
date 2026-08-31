@@ -28,7 +28,10 @@ rollback.
 
 It accepts a closed JSON mechanics case, records its exact UTF-8 bytes under SHA-256,
 and returns factual engine observations. It can serve stateless HTTP or direct MCP
-stdio. There is no UI in this version.
+stdio. Hosts that support MCP Apps can open one bounded run-record viewer for
+`chrono_run_prescribed_kinematics`, `chrono_run_get` and `chrono_run_receipt_get`.
+Text-only clients keep the existing structured JSON and text fallback. The default
+surface is one compact run record, not a dashboard.
 
 ## Scope and boundary
 
@@ -167,6 +170,25 @@ or path surface. These local commands are loopback-only. Do not set `HOST` to a
 non-loopback address without an authenticated boundary. A direct non-loopback native
 HTTP process requires the framework's static token configuration `MCP_AUTH_TOKENS` and
 `MCP_AUTH_RESOURCE`; it is distinct from the container proxy described below.
+
+The optional MCP App HTML is a committed single-file resource at
+`src/ui/dist/run-record-viewer/index.html`, registered as
+`ui://mcp-chrono/run-record-viewer`. Rebuild it only through `deno task build:ui` after
+setting the exact split package roots from mcp-server commit
+`8fad891839203122efbe2438ba81a6e7d08c9202`:
+
+```sh
+export MCP_VIEW_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view
+export MCP_VIEW_CONTRACTS_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view-contracts
+export MCP_VIEW_COMPONENTS_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view-components
+deno task build:ui
+deno task check:ui:bundle
+```
+
+There is no published `@casys/mcp-view` fallback. Missing roots fail closed. The default
+viewer surface is one compact semantic run record; sample page, execution facts and
+receipt provenance stay host-selectable. `execution_state` and `kinematics_exit` remain
+factual engine state, not a proof or product verdict.
 
 ## Docker and VPS deployment
 

@@ -4,6 +4,11 @@ This provider is intentionally limited to explicit Project Chrono prescribed kin
 Changes must preserve that boundary: no caller-provided code, paths, inferred joints,
 product verdicts, or Digital Thread integration.
 
+Viewer HTML is generated, never hand-edited. After changing `src/ui/run-record-viewer/`,
+set the audited mcp-server split roots at commit
+`8fad891839203122efbe2438ba81a6e7d08c9202` and run `deno task build:ui`. CI rebuilds
+that bundle with `--frozen` and fails unless `git diff` would see no HTML drift.
+
 Before proposing a change, run the documented Deno checks. Container changes must keep
 the Linux/amd64 CPU-only explicit lock, non-root runtime, loopback-only Deno service,
 and authenticated public proxy aligned. Regenerate the lock from the solver JSON's full

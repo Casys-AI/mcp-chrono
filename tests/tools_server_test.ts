@@ -75,6 +75,7 @@ async function rpc(
       "MCP-Protocol-Version": proto,
       "Mcp-Method": method,
       ...(method === "tools/call" ? { "Mcp-Name": params.name as string } : {}),
+      ...(method === "resources/read" ? { "Mcp-Name": params.uri as string } : {}),
     },
     body: JSON.stringify({
       jsonrpc: "2.0",
@@ -171,14 +172,42 @@ Deno.test("HTTP wire supports modern discover, list and structured tool calls", 
     assertEquals(discover.result?.supportedVersions, [proto]);
     const list = await rpc(port, 2, "tools/list");
     assertEquals(list.error, undefined);
-    assert(
-      (list.result?.tools as Array<{ name: string }>).some((tool) =>
-        tool.name === "chrono_case_submit"
-      ),
+    const tools = list.result?.tools as Array<Record<string, unknown>>;
+    assert(tools.some((tool) => tool.name === "chrono_case_submit"));
+    const caseSubmitTool = tools.find((tool) => tool.name === "chrono_case_submit")!;
+    assertEquals(caseSubmitTool._meta, undefined);
+    assertEquals(
+      (tools.find((tool) => tool.name === "chrono_manifest_get")?._meta) ?? undefined,
+      undefined,
     );
-    const caseSubmitTool = (list.result?.tools as Array<Record<string, unknown>>).find(
-      (tool) => tool.name === "chrono_case_submit",
-    )!;
+    const runRecordUri = "ui://mcp-chrono/run-record-viewer";
+    for (
+      const name of [
+        "chrono_run_prescribed_kinematics",
+        "chrono_run_get",
+        "chrono_run_receipt_get",
+      ]
+    ) {
+      const tool = tools.find((entry) => entry.name === name);
+      assert(tool, name);
+      assertEquals(
+        ((tool._meta as Record<string, unknown>).ui as Record<string, unknown>)
+          .resourceUri,
+        runRecordUri,
+      );
+    }
+    const resources = await rpc(port, 21, "resources/list");
+    assertEquals(resources.error, undefined);
+    const listed = resources.result?.resources as Array<Record<string, unknown>>;
+    assertEquals(listed.length, 1);
+    assertEquals(listed[0]?.uri, runRecordUri);
+    assertEquals(listed[0]?.mimeType, "text/html;profile=mcp-app");
+    const resource = await rpc(port, 22, "resources/read", { uri: runRecordUri });
+    assertEquals(resource.error, undefined);
+    const html = ((resource.result?.contents as Array<Record<string, unknown>>)[0]
+      ?.text) as string;
+    assertStringIncludes(html, "<!doctype html>");
+    assertStringIncludes(html, "chrono.run-summary");
     assertEquals(
       (caseSubmitTool.inputSchema as Record<string, unknown>).required,
       ["case_json"],
@@ -423,7 +452,7 @@ Deno.test("stdio subprocess returns a structured modern discovery identity", asy
   assertEquals(discover.error, undefined);
   assertEquals(discover.result, {
     supportedVersions: [proto],
-    capabilities: { tools: {} },
+    capabilities: { tools: {}, resources: { listChanged: true } },
     instructions: providerInstructions,
     resultType: "complete",
     ttlMs: 0,
@@ -457,7 +486,7 @@ Deno.test("stdio subprocess supports legacy initialization and a manifest call",
   assertEquals(initialized.error, undefined);
   assertEquals(initialized.result, {
     protocolVersion: legacyProto,
-    capabilities: { tools: {} },
+    capabilities: { tools: {}, resources: { listChanged: true } },
     serverInfo,
     instructions: providerInstructions,
   });

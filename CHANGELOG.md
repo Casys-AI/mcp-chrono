@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Added a native MCP Apps run-record viewer for `chrono_run_prescribed_kinematics`,
+  `chrono_run_get` and `chrono_run_receipt_get`. The default surface is one compact
+  semantic run record; bounded sample page, execution facts and receipt provenance are
+  host-selectable catalog components built from `@casys/mcp-view-components`. Solver
+  `SUCCESS` remains a kinematics exit name, not a proof. Text-only clients are
+  unchanged.
+
 ## 0.3.2 — 2026-08-31
 
 - Fixed the 0.3.1 prescribed-kinematics terminal-tick defect. IEEE-754 accumulation of

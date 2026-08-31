@@ -18,6 +18,7 @@ import {
 import { errorResult } from "../domain/errors.ts";
 import { normalizeSamplePageRequest } from "../domain/result-view.ts";
 import { PROVIDER_VERSION, type RunRequest } from "../domain/types.ts";
+import { CHRONO_RUN_RECORD_VIEWER_URI } from "../ui/register.ts";
 import {
   caseGetOutputSchema,
   caseSubmitOutputSchema,
@@ -27,6 +28,10 @@ import {
   runOutputSchema,
   templateOutputSchema,
 } from "./schemas.ts";
+
+const runRecordUiMeta = {
+  ui: { resourceUri: CHRONO_RUN_RECORD_VIEWER_URI },
+} as const;
 
 const objectSchema = { type: "object", additionalProperties: false } as const;
 type ToolFailure = {
@@ -187,6 +192,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
       },
     },
     outputSchema: runOutputSchema,
+    _meta: runRecordUiMeta,
   }, async (args) => {
     try {
       const { sample_offset, sample_limit, ...request } = args as Record<
@@ -228,6 +234,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
       },
     },
     outputSchema: runGetOutputSchema,
+    _meta: runRecordUiMeta,
   }, async (args) => {
     try {
       const page = normalizeSamplePageRequest({
@@ -254,6 +261,7 @@ export function registerChronoTools(app: McpApp, service: ChronoService): void {
       },
     },
     outputSchema: receiptGetOutputSchema,
+    _meta: runRecordUiMeta,
   }, async (args) => {
     try {
       const page = normalizeSamplePageRequest({

@@ -1,0 +1,36 @@
+{
+  "lock": false,
+  "minimumDependencyAge": {
+    "age": "P1D"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "lib": [
+      "deno.ns",
+      "deno.window",
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "esnext"
+    ]
+  },
+  "imports": {
+    "linkedom": "npm:linkedom@0.18.12",
+    "preact": "npm:preact@10.29.7",
+    "preact/jsx-runtime": "npm:preact@10.29.7/jsx-runtime",
+    "@std/assert": "jsr:@std/assert@1.0.19",
+    "@std/path": "jsr:@std/path@1.1.6"
+  },
+  "fmt": {
+    "lineWidth": 88,
+    "indentWidth": 2,
+    "singleQuote": false
+  },
+  "tasks": {
+    "build": "deno run -A build.ts",
+    "test": "deno run -A test.ts",
+    "check:bundle": "deno run -A check-bundle.ts",
+    "fmt": "deno fmt --check index.html build.ts check-bundle.ts local-modules.ts test.ts src"
+  }
+}

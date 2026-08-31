@@ -12,8 +12,19 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+    env:
+      MCP_VIEW_LOCAL_ROOT: ${{ github.workspace }}/.deps/mcp-server/packages/view
+      MCP_VIEW_CONTRACTS_LOCAL_ROOT: ${{ github.workspace }}/.deps/mcp-server/packages/view-contracts
+      MCP_VIEW_COMPONENTS_LOCAL_ROOT: ${{ github.workspace }}/.deps/mcp-server/packages/view-components
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Checkout the exact split mcp-view source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Casys-AI/mcp-server
+          ref: 8fad891839203122efbe2438ba81a6e7d08c9202
+          path: .deps/mcp-server
+          persist-credentials: false
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
         with: { deno-version: v2.9.6 }
       - id: version
@@ -27,6 +38,7 @@ jobs:
       - run: deno task check
       - run: deno task lint
       - run: deno task test
+      - run: deno task check:ui:bundle
       - run: deno publish --dry-run
       - name: Verify CPU-only lock boundary
         shell: bash
