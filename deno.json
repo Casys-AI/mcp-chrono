@@ -3,7 +3,8 @@
   "version": "0.3.3",
   "exports": {
     ".": "./mod.ts",
-    "./server": "./server.ts"
+    "./server": "./server.ts",
+    "./view-app-manifest": "./src/ui/app-manifest.json"
   },
   "imports": {
     "@casys/mcp-server": "jsr:@casys/mcp-server@0.26.1",
