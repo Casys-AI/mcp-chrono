@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@casys/mcp-server@0.26.1": "0.26.1",
+    "jsr:@casys/mcp-view-contracts@0.1.0": "0.1.0",
     "jsr:@std/assert@1.0.14": "1.0.14",
     "jsr:@std/internal@^1.0.10": "1.0.14",
     "jsr:@std/internal@^1.0.14": "1.0.14",
@@ -28,6 +29,9 @@
         "npm:hono",
         "npm:jose"
       ]
+    },
+    "@casys/mcp-view-contracts@0.1.0": {
+      "integrity": "b371f270af064910af39446edd3f795250bd5b89c89542c3583975ef9ff0616c"
     },
     "@std/assert@1.0.14": {
       "integrity": "68d0d4a43b365abc927f45a9b85c639ea18a9fab96ad92281e493e4ed84abaa4",
@@ -599,6 +603,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@casys/mcp-server@0.26.1",
+      "jsr:@casys/mcp-view-contracts@0.1.0",
       "jsr:@std/assert@1.0.14",
       "jsr:@std/path@1.1.6"
     ]
