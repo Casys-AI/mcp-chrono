@@ -41,7 +41,7 @@ to exercise the actual committed viewer bundle through an MCP Apps handshake and
 ## Rebuilding the bundle
 
 The HTML under `src/ui/dist/` is generated. Use the audited split packages from
-`Casys-AI/mcp-server` commit `ebc4c40259deab076c8d6a7921d2870c80cc82a0`:
+`Casys-AI/mcp-server` commit `87b54e555f5f2ab125405640c4e15fea481788f8`:
 
 ```sh
 export MCP_VIEW_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view
