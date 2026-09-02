@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+- The run-record viewer now boots through `startPreactSurfaceApp` from
+  `@casys/mcp-view-components@0.6.0` instead of a hand-written App lifecycle. Tool
+  results and `viewer.session.apply` sessions still go through the strict `model.ts` and
+  `viewer-session.ts` parsers; the shared lifecycle owns view routing, host surface
+  selection and the pre-connect session buffer.
+- Removed the local `session-receiver.ts` buffer. `@casys/mcp-view@0.9.2` delivers
+  sessions in order and holds those received before the App activates, which is the
+  guarantee the shim provided.
+- Status states render through the shared `StateMessage` primitive with the
+  `chrono-viewer-state` class. Unresolved and unavailable recorded runs are warning
+  notices whose `code` carries the ledger status; a session the strict parser refuses is
+  a danger state titled `Session rejected` with code `session-rejected`; a tool result
+  the projection cannot read is the shared `Result rejected` state; a viewer that cannot
+  start shows `Chrono viewer unavailable`. Loading states carry the shared `Loading`
+  title and `info` tone, empty states the `Empty` title and error results the `Error`
+  title.
+- Pins the split View checkout to the `mcp-server` revision that carries
+  `@casys/mcp-view-components@0.6.0`. That revision is not on the `mcp-server` default
+  branch yet and 0.6.0 is unpublished: do not tag a Chrono release until the pin moves
+  to a durable revision.
+
 ## 0.3.3 — 2026-08-31
 
 - Added and served an exact serialized MCP View App manifest for the Chrono run-record
