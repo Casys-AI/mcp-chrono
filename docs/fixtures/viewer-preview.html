@@ -42,12 +42,7 @@
       letter-spacing: .06em;
       text-transform: uppercase;
     }
-    .paper {
-      overflow: hidden;
-      background: #fff;
-      border: 1px solid #d9ddd8;
-      border-radius: 12px;
-    }
+    /* The viewer frames itself; the page only lends it the ground. */
     iframe {
       display: block;
       width: 100%;
@@ -60,22 +55,21 @@
     <main>
       <p
         class="legend"><strong>Fixture</strong> Contract preview — not execution evidence</p>
-      <div class="paper">
-        <iframe
-          id="viewer"
-          title="Chrono recorded run viewer"
-          src="../../src/ui/dist/run-record-viewer/index.html"
-        ></iframe>
-      </div>
+      <iframe
+        id="viewer"
+        title="Chrono recorded run viewer"
+        src="../../src/ui/dist/run-record-viewer/index.html"
+      ></iframe>
     </main>
     <script type="module">
     const viewer = document.querySelector("#viewer");
-    const session = await fetch("./recorded-run-session.demo.json").then((response) => {
+    // Listen before the fixture arrives: the bundle may initialize first.
+    const session = fetch("./recorded-run-session.demo.json").then((response) => {
       if (!response.ok) throw new Error(`Fixture HTTP ${response.status}`);
       return response.json();
     });
     let initialized = false;
-    window.addEventListener("message", (event) => {
+    window.addEventListener("message", async (event) => {
       if (event.source !== viewer.contentWindow) return;
       const message = event.data;
       if (message?.jsonrpc !== "2.0") return;
@@ -103,7 +97,7 @@
         viewer.contentWindow.postMessage({
           jsonrpc: "2.0",
           method: "ui/compose/event",
-          params: { action: "viewer.session.apply", data: session },
+          params: { action: "viewer.session.apply", data: await session },
         }, "*");
         document.documentElement.dataset.viewerReady = "true";
       }

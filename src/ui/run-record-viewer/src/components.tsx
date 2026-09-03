@@ -114,7 +114,7 @@ const RecordedRun = ({ data }: ChronoComponentProps) => {
 
 /** Standalone default: exactly one recorded-run business component. */
 export const CHRONO_RUN_RECORD_SURFACE = defineComponentSurface({
-  layout: { type: "stack", gap: "sm" },
+  layout: { type: "stack", gap: "none" },
   components: [{
     id: "recorded-run",
     component: CHRONO_COMPONENT_KEYS.recordedRun,

@@ -431,7 +431,8 @@ Deno.test("default surface is exactly one recorded-run business component", () =
     CHRONO_COMPONENT_KEYS.recordedRun,
   ]);
   assertEquals(catalog.defaultSurface, CHRONO_RUN_RECORD_SURFACE);
-  assertEquals(CHRONO_RUN_RECORD_SURFACE.layout, { type: "stack", gap: "sm" });
+  // The kit frames the surface and separates stacked components with hairlines.
+  assertEquals(CHRONO_RUN_RECORD_SURFACE.layout, { type: "stack", gap: "none" });
   assertEquals(CHRONO_RUN_RECORD_SURFACE.components, [{
     id: "recorded-run",
     component: CHRONO_COMPONENT_KEYS.recordedRun,

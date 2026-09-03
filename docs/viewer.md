@@ -38,10 +38,23 @@ Serve the repository root and open [`viewer-preview.html`](fixtures/viewer-previ
 to exercise the actual committed viewer bundle through an MCP Apps handshake and
 `viewer.session.apply` event.
 
+The screenshot above is captured from that harness, not drawn by hand. After a viewer
+change, rebuild the bundle and regenerate it:
+
+```sh
+deno task docs:viewer-screenshot
+```
+
+The task serves the repository on a loopback port, renders the harness in headless
+Chrome at a fixed 900×400 window and 2× scale, and writes
+`docs/assets/chrono-recorded-run-viewer.png`. Point `CHROME_BIN` at a Chrome or
+`chrome-headless-shell` binary when none of the usual locations has one; `ffmpeg` (or
+`FFMPEG_BIN`) only shrinks the PNG when present.
+
 ## Rebuilding the bundle
 
 The HTML under `src/ui/dist/` is generated. Use the audited split packages from
-`Casys-AI/mcp-server` commit `87b54e555f5f2ab125405640c4e15fea481788f8`:
+`Casys-AI/mcp-server` commit `bb8bffd096829ff617b32d73791cb2887aa792d8`:
 
 ```sh
 export MCP_VIEW_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view

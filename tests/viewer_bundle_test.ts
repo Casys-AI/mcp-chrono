@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { fromFileUrl } from "@std/path";
 
-const PINNED_MCP_SERVER_COMMIT = "87b54e555f5f2ab125405640c4e15fea481788f8";
+const PINNED_MCP_SERVER_COMMIT = "bb8bffd096829ff617b32d73791cb2887aa792d8";
 
 Deno.test("viewer build fails closed without every audited split root", async () => {
   const repository = fromFileUrl(new URL("../", import.meta.url));
@@ -65,6 +65,11 @@ Deno.test("CI pins the exact mcp-server checkout for viewer rebuilds", async () 
     assertStringIncludes(workflow, "MCP_VIEW_CONTRACTS_LOCAL_ROOT");
     assertStringIncludes(workflow, "MCP_VIEW_COMPONENTS_LOCAL_ROOT");
     assertStringIncludes(workflow, "deno task check:ui:bundle");
+  }
+  // The contributor docs quote the same checkout; a drift there misleads a rebuild.
+  for (const relative of ["../CONTRIBUTING.md", "../docs/viewer.md"]) {
+    const prose = await Deno.readTextFile(new URL(relative, import.meta.url));
+    assertStringIncludes(prose, PINNED_MCP_SERVER_COMMIT);
   }
 });
 

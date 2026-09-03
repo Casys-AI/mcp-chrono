@@ -5,6 +5,7 @@ import {
   type SurfaceAppHandle,
   type SurfaceDisplayState,
 } from "@casys/mcp-view-components/preact";
+import { installMcpViewFonts } from "@casys/mcp-view-components/fonts";
 import {
   CHRONO_VIEW_APP_MANIFEST,
   CHRONO_VIEWER_SESSION_SCHEMA,
@@ -38,6 +39,8 @@ export type ChronoSurfaceAppOptions = PreactSurfaceAppOptions<
 export function startChronoRunRecordApp(
   root: HTMLElement,
 ): Promise<SurfaceAppHandle<ChronoRunView>> {
+  // Hosts sandbox the App without web fonts; the kit embeds its three faces.
+  installMcpViewFonts(root.ownerDocument);
   return startPreactSurfaceApp(chronoSurfaceAppOptions(root));
 }
 
