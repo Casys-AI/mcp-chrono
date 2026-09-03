@@ -6,7 +6,7 @@ product verdicts, or Digital Thread integration.
 
 Viewer HTML is generated, never hand-edited. After changing `src/ui/run-record-viewer/`,
 set the audited mcp-server split roots at commit
-`bb8bffd096829ff617b32d73791cb2887aa792d8` and run `deno task build:ui`. CI rebuilds
+`676a2c7379c6be9fe69a6b06da244178088b5e5a` and run `deno task build:ui`. CI rebuilds
 that bundle with `--frozen` and fails unless `git diff` would see no HTML drift.
 
 Before proposing a change, run the documented Deno checks. Container changes must keep

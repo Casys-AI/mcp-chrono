@@ -15,7 +15,7 @@ import { dirname, extname, fromFileUrl, join, resolve, SEPARATOR } from "@std/pa
 const root = dirname(dirname(fromFileUrl(import.meta.url)));
 const harnessPath = "/docs/fixtures/viewer-preview.html";
 const outputPath = join(root, "docs/assets/chrono-recorded-run-viewer.png");
-const WINDOW = { width: 900, height: 400 };
+const WINDOW = { width: 900, height: 720 };
 /** Chrome and ffmpeg both finish in seconds; a deadline keeps a stuck one from hanging. */
 const TOOL_DEADLINE_MS = 60_000;
 

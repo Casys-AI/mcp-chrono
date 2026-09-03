@@ -42,11 +42,11 @@
       letter-spacing: .06em;
       text-transform: uppercase;
     }
-    /* The viewer frames itself; the page only lends it the ground. */
+    /* The viewer frames itself and reports its height; the page only lends it the ground. */
     iframe {
       display: block;
       width: 100%;
-      height: 286px;
+      height: 120px;
       border: 0;
     }
     </style>
@@ -68,6 +68,7 @@
       if (!response.ok) throw new Error(`Fixture HTTP ${response.status}`);
       return response.json();
     });
+    const MAX_HEIGHT = 640;
     let initialized = false;
     window.addEventListener("message", async (event) => {
       if (event.source !== viewer.contentWindow) return;
@@ -84,12 +85,20 @@
             hostContext: {
               theme: "light",
               displayMode: "inline",
-              containerDimensions: { width: 758, maxHeight: 286 },
+              containerDimensions: { width: 760, maxHeight: MAX_HEIGHT },
               locale: "en",
               platform: "web",
             },
           },
         }, "*");
+        return;
+      }
+      if (message.method === "ui/notifications/size-changed") {
+        // Follow the App's reported height up to the container limit, like a host does.
+        const height = message.params?.height;
+        if (typeof height === "number") {
+          viewer.style.height = `${Math.min(Math.ceil(height), MAX_HEIGHT)}px`;
+        }
         return;
       }
       if (message.method === "ui/notifications/initialized" && !initialized) {

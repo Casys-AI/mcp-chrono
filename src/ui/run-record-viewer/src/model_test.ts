@@ -610,19 +610,81 @@ Deno.test({
         assertEquals(card?.getAttribute("data-density"), "card");
         assertEquals(card?.getAttribute("data-semantic-domain"), "chrono");
         assertEquals(card?.getAttribute("data-semantic-kind"), "recorded-run");
+        // The reference contract wants the bare receipt digest as the basis.
+        assertEquals(card?.getAttribute("data-basis-fingerprint"), RECEIPT_SHA);
         assertEquals(card?.hasAttribute("data-tone"), false);
         assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
         assertEquals(root.querySelector(".mcp-view-limit-gauge"), null);
-        assertStringIncludes(root.textContent ?? "", "wire-paged");
-        assertStringIncludes(root.textContent ?? "", "completed");
-        assertStringIncludes(root.textContent ?? "", "0.9999999999999999");
-        assertStringIncludes(root.textContent ?? "", RECEIPT_SHA);
-        assertEquals(root.textContent?.includes("Bounded sample page"), false);
-        assertEquals(root.textContent?.includes("Receipt provenance"), false);
-        assertEquals((root.textContent ?? "").includes("pass"), false);
-        assertEquals((root.textContent ?? "").includes("proof"), false);
+        const text = root.textContent ?? "";
+        assertStringIncludes(text, "wire-paged");
+        assertStringIncludes(text, "Prescribed kinematics run");
+        // The engine's literal facts headline the sheet, spelled exactly.
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-reading-value"),
+            (value) => value.textContent,
+          ),
+          ["completed", "2", "0 → 0.9999999999999999", "SUCCESS"],
+        );
+        assertStringIncludes(text, "raw code 1");
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-section-title"),
+            (title) => title.textContent,
+          ),
+          ["Engine", "Provenance", "Digests"],
+        );
+        assertStringIncludes(text, "Project Chrono 10.0.0");
+        assertStringIncludes(text, "pychrono · Python 3.12.0");
+        assertStringIncludes(text, "Not evaluated");
+        assertStringIncludes(text, "collision, clearance, contact");
+        assertStringIncludes(text, "2026-08-28T00:00:00.000Z");
+        // The case row spells its digest as uri and as fingerprint; every other digest once.
+        assertEquals(text.split(CASE_SHA).length - 1, 2);
+        assertEquals(text.split(OUTCOME_SHA).length - 1, 1);
+        assertEquals(text.split(WORKER_SHA).length - 1, 1);
+        assertEquals(
+          root.querySelector(".mcp-view-element-provenance code")?.textContent,
+          RECEIPT_SHA,
+        );
+        assertEquals(text.includes("Bounded sample page"), false);
+        assertEquals(text.includes("Receipt provenance"), false);
+        assertEquals(text.includes("pass"), false);
+        assertEquals(text.includes("proof"), false);
+        assertEquals(text.includes("_"), false, "no raw field names on the sheet");
         await mounted.dispose();
         assertEquals(root.textContent, "");
+      },
+    );
+  },
+});
+
+Deno.test({
+  name:
+    "a run that did not converge keeps its literal state and turns the sheet to warning",
+  permissions: { read: true, env: true, run: true },
+  async fn() {
+    const notConverged: ChronoRunRecordView = {
+      ...recorded,
+      observation: {
+        ...recorded.observation,
+        execution_state: "not_converged",
+        kinematics_exit: { raw_code: 0, raw_name: "NOT_CONVERGED" },
+      },
+    };
+    await withMountedSurface(
+      { kind: "recorded", replayed: true, record: notConverged },
+      {},
+      (root) => {
+        const card = root.querySelector(".mcp-view-semantic-element");
+        assertEquals(card?.getAttribute("data-tone"), "warning");
+        assertStringIncludes(root.textContent ?? "", "not_converged");
+        assertStringIncludes(root.textContent ?? "", "NOT_CONVERGED");
+        assertStringIncludes(
+          root.textContent ?? "",
+          "replayed from the existing record",
+        );
+        assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
       },
     );
   },

@@ -46,7 +46,7 @@ deno task docs:viewer-screenshot
 ```
 
 The task serves the repository on a loopback port, renders the harness in headless
-Chrome at a fixed 900×400 window and 2× scale, and writes
+Chrome at a fixed 900×720 window and 2× scale, and writes
 `docs/assets/chrono-recorded-run-viewer.png`. Point `CHROME_BIN` at a Chrome or
 `chrome-headless-shell` binary when none of the usual locations has one; `ffmpeg` (or
 `FFMPEG_BIN`) only shrinks the PNG when present.
@@ -54,7 +54,7 @@ Chrome at a fixed 900×400 window and 2× scale, and writes
 ## Rebuilding the bundle
 
 The HTML under `src/ui/dist/` is generated. Use the audited split packages from
-`Casys-AI/mcp-server` commit `bb8bffd096829ff617b32d73791cb2887aa792d8`:
+`Casys-AI/mcp-server` commit `676a2c7379c6be9fe69a6b06da244178088b5e5a`:
 
 ```sh
 export MCP_VIEW_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view

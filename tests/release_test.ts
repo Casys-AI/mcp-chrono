@@ -136,6 +136,8 @@ Deno.test("release pins and package version stay explicit", async () => {
   assertEquals(deno.exports, {
     ".": "./mod.ts",
     "./server": "./server.ts",
+    // Hosts read the View App manifest without booting the server.
+    "./view-app-manifest": "./src/ui/app-manifest.json",
   });
   assert(citation.includes(`version: "${deno.version}"`));
   const types = await text("src/domain/types.ts");
