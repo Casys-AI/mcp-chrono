@@ -54,7 +54,7 @@ Chrome at a fixed 900×720 window and 2× scale, and writes
 ## Rebuilding the bundle
 
 The HTML under `src/ui/dist/` is generated. Use the audited split packages from
-`Casys-AI/mcp-server` commit `676a2c7379c6be9fe69a6b06da244178088b5e5a`:
+`Casys-AI/mcp-server` commit `59eeb3750d2049b8141b09d3a6f29f66f9d3c657`:
 
 ```sh
 export MCP_VIEW_LOCAL_ROOT=/absolute/path/to/mcp-server/packages/view

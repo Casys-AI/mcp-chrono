@@ -8,11 +8,11 @@
   did on earlier ones. `SECURITY.md` names `0.3.3` as the current line and `0.3.2` as
   the previous one.
 - The run-record viewer now boots through `startPreactSurfaceApp` from
-  `@casys/mcp-view-components@0.6.0` instead of a hand-written App lifecycle. Tool
+  `@casys/mcp-view-components@0.7.0` instead of a hand-written App lifecycle. Tool
   results and `viewer.session.apply` sessions still go through the strict `model.ts` and
   `viewer-session.ts` parsers; the shared lifecycle owns view routing, host surface
   selection and the pre-connect session buffer.
-- Removed the local `session-receiver.ts` buffer. `@casys/mcp-view@0.9.2` delivers
+- Removed the local `session-receiver.ts` buffer. `@casys/mcp-view@0.9.3` delivers
   sessions in order and holds those received before the App activates, which is the
   guarantee the shim provided.
 - Status states render through the shared `StateMessage` primitive with the
@@ -24,10 +24,11 @@
   title and `info` tone, empty states the `Empty` title and error results the `Error`
   title.
 - Pins the split View checkout to `mcp-server` commit
-  `676a2c7379c6be9fe69a6b06da244178088b5e5a`, which carries
-  `@casys/mcp-view-components@0.6.0`. That commit is reachable from the `mcp-server`
-  default branch (merged as `f475f63`) and 0.6.0 is published on JSR and npm, so the pin
-  is durable.
+  `59eeb3750d2049b8141b09d3a6f29f66f9d3c657`, which carries `@casys/mcp-view@0.9.3` and
+  `@casys/mcp-view-components@0.7.0`. The pin is durable once Casys-AI/mcp-server#37 is
+  merged as a merge commit, which is also what publishes 0.9.3 and 0.7.0 on JSR and npm.
+  With 0.7.0 a complete `tool-input`, not only a partial one, returns the App to
+  `loading`.
 
 ## 0.3.3 — 2026-08-31
 
