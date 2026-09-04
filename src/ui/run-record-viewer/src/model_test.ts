@@ -6,7 +6,6 @@ import {
 } from "@std/assert";
 import {
   advertisedComponentCatalog,
-  CASYS_SURFACE_CONTEXT_KEY,
   mountComponentSurface,
 } from "@casys/mcp-view-components";
 import type { PreactSurfaceContext } from "@casys/mcp-view-components/preact";
@@ -24,7 +23,15 @@ import {
   chronoRecordedSessionFingerprint,
   parseChronoViewerSession,
 } from "../../../viewer-session.ts";
-import { CHRONO_APP_INFO, renderDisplayState, resolveChronoSurface } from "./app.ts";
+import {
+  CHRONO_APP_INFO,
+  CHRONO_STATUS_CLASS,
+  chronoSurfaceAppOptions,
+  displayStateFromViewerSession,
+  renderStartupFailure,
+  SESSION_REJECTED_CODE,
+  toSurfaceState,
+} from "./app.ts";
 import {
   CHRONO_COMPONENT_KEYS,
   CHRONO_COMPONENT_REGISTRY,
@@ -40,7 +47,6 @@ import {
   parseChronoRunView,
   toolErrorMessage,
 } from "./model.ts";
-import { createBufferedSessionReceiver } from "./session-receiver.ts";
 
 const CASE_SHA = "a".repeat(64);
 const RECEIPT_SHA = "b".repeat(64);
@@ -290,39 +296,6 @@ Deno.test("re-signed session substitutions cannot replace recorded bytes", async
   );
 });
 
-Deno.test("viewer session receiver preserves pre-connect FIFO delivery", async () => {
-  let listener:
-    | ((payload: { readonly data: unknown }) => void)
-    | undefined;
-  const receiver = createBufferedSessionReceiver<string>({
-    events: {
-      on(action, next) {
-        assertEquals(action, VIEWER_SESSION_APPLY_ACTION);
-        listener = next;
-        return () => {
-          listener = undefined;
-        };
-      },
-    },
-    action: VIEWER_SESSION_APPLY_ACTION,
-    map: (value) => String(value),
-    onError: (error) => {
-      throw error;
-    },
-  });
-  listener?.({ data: "first" });
-  listener?.({ data: "second" });
-  const observed: string[] = [];
-  await receiver.activate((value) => {
-    observed.push(value);
-  });
-  listener?.({ data: "third" });
-  await receiver.drain();
-  assertEquals(observed, ["first", "second", "third"]);
-  receiver.dispose();
-  assertEquals(listener, undefined);
-});
-
 Deno.test("parser keeps the exact terminal sample time and does not relabel it", () => {
   const parsed = parseChronoRunView(runResult);
   if (parsed.kind !== "recorded") throw new Error("expected recorded");
@@ -396,43 +369,6 @@ Deno.test("parser rejects extra fields, invented states and unbounded pages", ()
   );
 });
 
-Deno.test({
-  name: "lifecycle states render the shared busy and error component",
-  permissions: { read: true, env: true, run: true },
-  async fn() {
-    const documentModule = await import("linkedom");
-    const dom = documentModule.parseHTML("<html><body></body></html>");
-    const previousDocument = globalThis.document;
-    Object.defineProperty(globalThis, "document", {
-      configurable: true,
-      value: dom.document,
-    });
-    try {
-      const loading = renderDisplayState({ kind: "loading" });
-      assertEquals(
-        loading.querySelector(".mcp-view-state")?.getAttribute("aria-busy"),
-        "true",
-      );
-      assertEquals(loading.querySelectorAll(".mcp-view-state-busy").length, 1);
-      const error = renderDisplayState({
-        kind: "error",
-        message: "<script>not markup</script>",
-      });
-      assertEquals(
-        error.querySelector(".mcp-view-state")?.getAttribute("role"),
-        "alert",
-      );
-      assertStringIncludes(error.textContent ?? "", "<script>not markup</script>");
-      assertEquals(error.querySelector("script"), null);
-    } finally {
-      Object.defineProperty(globalThis, "document", {
-        configurable: true,
-        value: previousDocument,
-      });
-    }
-  },
-});
-
 Deno.test("parser rejects kinematics_exit pairs that are not native facts", () => {
   assertThrows(
     () =>
@@ -495,7 +431,8 @@ Deno.test("default surface is exactly one recorded-run business component", () =
     CHRONO_COMPONENT_KEYS.recordedRun,
   ]);
   assertEquals(catalog.defaultSurface, CHRONO_RUN_RECORD_SURFACE);
-  assertEquals(CHRONO_RUN_RECORD_SURFACE.layout, { type: "stack", gap: "sm" });
+  // The kit frames the surface and separates stacked components with hairlines.
+  assertEquals(CHRONO_RUN_RECORD_SURFACE.layout, { type: "stack", gap: "none" });
   assertEquals(CHRONO_RUN_RECORD_SURFACE.components, [{
     id: "recorded-run",
     component: CHRONO_COMPONENT_KEYS.recordedRun,
@@ -523,32 +460,125 @@ Deno.test("default surface is exactly one recorded-run business component", () =
   );
 });
 
-Deno.test("a malformed host surface is recoverable by a later valid context", () => {
-  const malformed = resolveChronoSurface({
-    [CASYS_SURFACE_CONTEXT_KEY]: {
-      instanceId: "whiteboard",
-      status: "ready",
-      source: "requested",
-      surface: {
-        layout: { type: "grid", columns: 0 },
-        components: [{
-          id: "recorded-run",
-          component: CHRONO_COMPONENT_KEYS.recordedRun,
-        }],
-      },
-    },
-  });
-  assertEquals(malformed.ok, false);
-  if (!malformed.ok) {
+Deno.test("the App projects tool results and recorded sessions through the model", async () => {
+  const options = chronoSurfaceAppOptions({} as HTMLElement);
+  assertEquals(options.info, CHRONO_APP_INFO);
+  assertEquals(options.strict, true);
+  assertEquals(options.surfaceClassName, "chrono-component-surface");
+  assertEquals(options.statusClassName, CHRONO_STATUS_CLASS);
+  const host = {
+    readServerResource: () => Promise.reject(new Error("must not read")),
+  };
+
+  assertEquals(
+    await options.fromToolResult?.({
+      content: [],
+      structuredContent: runGetRecorded,
+    }, host),
+    { kind: "result", result: { kind: "recorded", record: recorded } },
+  );
+  assertEquals(
+    await options.fromToolResult?.({
+      content: [{ type: "text", text: "Worker unavailable" }],
+      isError: true,
+    }, host),
+    { kind: "error", message: "Worker unavailable" },
+  );
+
+  const session = options.viewerSession;
+  if (!session) throw new Error("the App must subscribe to viewer sessions");
+  // Every payload of the whole-view action reaches the strict parser; no
+  // `onInvalid` exists because nothing is ever dropped before it.
+  assertEquals(session.validate({ schema: "nope" }), true);
+  assertEquals(session.onInvalid, undefined);
+  const rejected = await session.toState({ schema: "nope" }, host);
+  assertEquals(rejected.kind, "error");
+  if (rejected.kind === "error") {
+    assertEquals(rejected.title, "Session rejected");
+    assertEquals(rejected.code, SESSION_REJECTED_CODE);
     assertStringIncludes(
-      malformed.message,
-      "host-selected component surface is invalid",
+      rejected.message,
+      `Rejected ${CHRONO_VIEWER_SESSION_SCHEMA} session:`,
     );
   }
-  assertEquals(resolveChronoSurface({}), {
-    ok: true,
-    surface: CHRONO_RUN_RECORD_SURFACE,
+  const available = await session.toState(await viewerSessionFixture(), host);
+  assertEquals(available.kind, "result");
+  if (available.kind === "result") assertEquals(available.result.kind, "recorded");
+
+  const base = await viewerSessionFixture();
+  const unresolvedSession = {
+    ...base,
+    basis: { ...base.basis },
+    projection: { status: "unresolved", reason: "TRACE GAP" } as const,
+  };
+  unresolvedSession.basis.sessionFingerprint = await chronoRecordedSessionFingerprint(
+    unresolvedSession,
+  );
+  assertEquals(await displayStateFromViewerSession(unresolvedSession), {
+    kind: "unresolved",
+    reason: "TRACE GAP",
   });
+  assertEquals(await session.toState(unresolvedSession, host), {
+    kind: "notice",
+    tone: "warning",
+    title: "Recorded Chrono run unresolved",
+    message: "TRACE GAP",
+    code: "unresolved",
+  });
+});
+
+Deno.test("ledger states are warning notices carrying the status; every run state is a result", () => {
+  assertEquals(toSurfaceState({ kind: "loading" }), { kind: "loading" });
+  assertEquals(
+    toSurfaceState({ kind: "error", message: "boom" }),
+    { kind: "error", message: "boom" },
+  );
+  assertEquals(
+    toSurfaceState({ kind: "unavailable", reason: "receipt quarantined" }),
+    {
+      kind: "notice",
+      tone: "warning",
+      title: "Recorded Chrono run unavailable",
+      message: "receipt quarantined",
+      code: "unavailable",
+    },
+  );
+  assertEquals(
+    toSurfaceState({ kind: "absent" }),
+    { kind: "result", result: { kind: "absent" } },
+  );
+  const uncertainView = parseChronoRunView(uncertain);
+  assertEquals(
+    toSurfaceState(uncertainView),
+    { kind: "result", result: uncertainView },
+  );
+});
+
+Deno.test("a viewer that cannot start renders the shared danger state", async () => {
+  const documentModule = await import("linkedom");
+  const dom = documentModule.parseHTML("<html><body></body></html>");
+  const previousDocument = globalThis.document;
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: dom.document,
+  });
+  try {
+    const failure = renderStartupFailure(new Error("transport refused"));
+    assertEquals(failure.classList.contains("mcp-view-state"), true);
+    assertEquals(failure.classList.contains(CHRONO_STATUS_CLASS), true);
+    assertEquals(failure.getAttribute("data-tone"), "danger");
+    assertStringIncludes(failure.textContent ?? "", "Chrono viewer unavailable");
+    assertStringIncludes(failure.textContent ?? "", "transport refused");
+    assertStringIncludes(
+      renderStartupFailure("not an error").textContent ?? "",
+      "The viewer could not start.",
+    );
+  } finally {
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: previousDocument,
+    });
+  }
 });
 
 Deno.test("compact default source does not import invented verdict or bound widgets", async () => {
@@ -580,19 +610,81 @@ Deno.test({
         assertEquals(card?.getAttribute("data-density"), "card");
         assertEquals(card?.getAttribute("data-semantic-domain"), "chrono");
         assertEquals(card?.getAttribute("data-semantic-kind"), "recorded-run");
+        // The reference contract wants the bare receipt digest as the basis.
+        assertEquals(card?.getAttribute("data-basis-fingerprint"), RECEIPT_SHA);
         assertEquals(card?.hasAttribute("data-tone"), false);
         assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
         assertEquals(root.querySelector(".mcp-view-limit-gauge"), null);
-        assertStringIncludes(root.textContent ?? "", "wire-paged");
-        assertStringIncludes(root.textContent ?? "", "completed");
-        assertStringIncludes(root.textContent ?? "", "0.9999999999999999");
-        assertStringIncludes(root.textContent ?? "", RECEIPT_SHA);
-        assertEquals(root.textContent?.includes("Bounded sample page"), false);
-        assertEquals(root.textContent?.includes("Receipt provenance"), false);
-        assertEquals((root.textContent ?? "").includes("pass"), false);
-        assertEquals((root.textContent ?? "").includes("proof"), false);
+        const text = root.textContent ?? "";
+        assertStringIncludes(text, "wire-paged");
+        assertStringIncludes(text, "Prescribed kinematics run");
+        // The engine's literal facts headline the sheet, spelled exactly.
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-reading-value"),
+            (value) => value.textContent,
+          ),
+          ["completed", "2", "0 → 0.9999999999999999", "SUCCESS"],
+        );
+        assertStringIncludes(text, "raw code 1");
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-section-title"),
+            (title) => title.textContent,
+          ),
+          ["Engine", "Provenance", "Digests"],
+        );
+        assertStringIncludes(text, "Project Chrono 10.0.0");
+        assertStringIncludes(text, "pychrono · Python 3.12.0");
+        assertStringIncludes(text, "Not evaluated");
+        assertStringIncludes(text, "collision, clearance, contact");
+        assertStringIncludes(text, "2026-08-28T00:00:00.000Z");
+        // The case row spells its digest as uri and as fingerprint; every other digest once.
+        assertEquals(text.split(CASE_SHA).length - 1, 2);
+        assertEquals(text.split(OUTCOME_SHA).length - 1, 1);
+        assertEquals(text.split(WORKER_SHA).length - 1, 1);
+        assertEquals(
+          root.querySelector(".mcp-view-element-provenance code")?.textContent,
+          RECEIPT_SHA,
+        );
+        assertEquals(text.includes("Bounded sample page"), false);
+        assertEquals(text.includes("Receipt provenance"), false);
+        assertEquals(text.includes("pass"), false);
+        assertEquals(text.includes("proof"), false);
+        assertEquals(text.includes("_"), false, "no raw field names on the sheet");
         await mounted.dispose();
         assertEquals(root.textContent, "");
+      },
+    );
+  },
+});
+
+Deno.test({
+  name:
+    "a run that did not converge keeps its literal state and turns the sheet to warning",
+  permissions: { read: true, env: true, run: true },
+  async fn() {
+    const notConverged: ChronoRunRecordView = {
+      ...recorded,
+      observation: {
+        ...recorded.observation,
+        execution_state: "not_converged",
+        kinematics_exit: { raw_code: 0, raw_name: "NOT_CONVERGED" },
+      },
+    };
+    await withMountedSurface(
+      { kind: "recorded", replayed: true, record: notConverged },
+      {},
+      (root) => {
+        const card = root.querySelector(".mcp-view-semantic-element");
+        assertEquals(card?.getAttribute("data-tone"), "warning");
+        assertStringIncludes(root.textContent ?? "", "not_converged");
+        assertStringIncludes(root.textContent ?? "", "NOT_CONVERGED");
+        assertStringIncludes(
+          root.textContent ?? "",
+          "replayed from the existing record",
+        );
+        assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
       },
     );
   },

@@ -4,46 +4,24 @@ body {
   background: transparent;
 }
 
+/* The kit frames the surface; the viewer only keeps it off the iframe edge. */
 .chrono-component-surface {
   container-type: inline-size;
-  padding: 0.5rem;
+  padding: 8px;
 }
 
 .chrono-viewer-state {
-  margin: 0.65rem;
+  margin: 8px;
 }
 
-.chrono-run-record-card {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.55rem;
-  padding: 0.72rem;
-  box-shadow: none;
-}
-
-.chrono-run-record-card > .mcp-view-element-ident,
-.chrono-run-record-card > .mcp-view-element-body,
-.chrono-run-record-card > .mcp-view-element-provenance {
-  grid-column: 1;
-}
-
-.chrono-run-record-card .mcp-view-element-body {
-  display: grid;
-  gap: 0.55rem;
-}
-
+/* One run identity wraps rather than truncates: the request id is the title. */
 .chrono-run-record-card .mcp-view-element-ident-label {
   overflow: visible;
-  line-height: 1.25;
   text-overflow: clip;
   white-space: normal;
 }
 
-.chrono-run-readings {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-@container (min-width: 30rem) {
-  .chrono-run-readings {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.chrono-run-record-card .mcp-view-element-body {
+  display: grid;
+  gap: 14px;
 }

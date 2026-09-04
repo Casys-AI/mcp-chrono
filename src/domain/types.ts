@@ -1,7 +1,7 @@
 export const CASE_SCHEMA_ID = "chrono-prescribed-kinematics-case/1.0" as const;
 export const RECEIPT_SCHEMA_ID = "chrono-prescribed-kinematics-receipt/1.0" as const;
 export const CHRONO_VERSION = "10.0.0" as const;
-export const PROVIDER_VERSION = "0.3.3" as const;
+export const PROVIDER_VERSION = "0.3.4" as const;
 
 export type Vec3 = readonly [number, number, number];
 export type Quat = readonly [number, number, number, number];

@@ -32,14 +32,14 @@ native kinematics exit is not a product decision.
 For an MCP host using stdio:
 
 ```sh
-deno run -A jsr:@casys/mcp-chrono@0.3.3/server --stdio
+deno run -A jsr:@casys/mcp-chrono@0.3.4/server --stdio
 ```
 
 The native container includes the pinned Project Chrono runtime. Keep it on loopback,
 use a long random bearer token and preserve `/data`:
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono:0.3.3
+docker pull ghcr.io/casys-ai/mcp-chrono:0.3.4
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -47,7 +47,7 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono:0.3.3
+  ghcr.io/casys-ai/mcp-chrono:0.3.4
 ```
 
 The endpoint is `http://127.0.0.1:3025/mcp` and requires

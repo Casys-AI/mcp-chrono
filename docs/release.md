@@ -2,8 +2,10 @@
 
 ## Current release line
 
-Source version `0.3.3` is the viewer-contract release. Its immutable JSR and GHCR
-identities were published from tag `v0.3.3` and commit
+Source version `0.3.4` is the next release line; the source version alone is not
+registry evidence, and no `0.3.4` artifact exists until its own tag workflow and
+fresh-consumption checks pass. The last verified published identities are those of
+`0.3.3`, published from tag `v0.3.3` and commit
 `3776c95215e9ff2ee317576b46070e2fa7fb5aca`:
 
 - JSR: `jsr:@casys/mcp-chrono@0.3.3/server`

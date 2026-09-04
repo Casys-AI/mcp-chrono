@@ -3,7 +3,7 @@
 ## Published stdio server
 
 ```sh
-deno run -A jsr:@casys/mcp-chrono@0.3.3/server --stdio
+deno run -A jsr:@casys/mcp-chrono@0.3.4/server --stdio
 ```
 
 The source process needs Python with exactly PyChrono / Project Chrono 10.0.0. Normal
@@ -41,7 +41,7 @@ lock, and installs the CPU-only SHA-256-pinned Conda transaction. The public bou
 an in-image bearer proxy; the Deno MCP process remains on container loopback.
 
 ```sh
-docker pull ghcr.io/casys-ai/mcp-chrono:0.3.3
+docker pull ghcr.io/casys-ai/mcp-chrono:0.3.4
 docker volume create chrono-data
 chrono_token="$(openssl rand -hex 32)"
 docker run --rm \
@@ -49,7 +49,7 @@ docker run --rm \
   -p 127.0.0.1:3025:3025 \
   -v chrono-data:/data \
   --cap-drop=ALL --security-opt no-new-privileges:true \
-  ghcr.io/casys-ai/mcp-chrono:0.3.3
+  ghcr.io/casys-ai/mcp-chrono:0.3.4
 ```
 
 Use the immutable digest in [release.md](release.md) for production. Terminate TLS
