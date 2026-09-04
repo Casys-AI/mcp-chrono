@@ -62,7 +62,7 @@ paged independently. Exact limits live in the JSON Schema returned by
 
 ## Compatibility
 
-Recorded receipts are version-attested. Source version 0.3.3 reads only exact 0.3.3
+Recorded receipts are version-attested. Source version 0.3.4 reads only exact 0.3.4
 records and fails closed on older persisted formats. It never rewrites or relabels old
 bytes as current evidence.
 

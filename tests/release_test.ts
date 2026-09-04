@@ -132,7 +132,7 @@ Deno.test("release pins and package version stay explicit", async () => {
       `CPU-only lock includes ${forbiddenPackagePrefix}`,
     );
   }
-  assertEquals(deno.version, "0.3.3");
+  assertEquals(deno.version, "0.3.4");
   assertEquals(deno.exports, {
     ".": "./mod.ts",
     "./server": "./server.ts",
@@ -163,14 +163,14 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const compose = await text("deploy/compose.yaml");
   const envExample = await text("deploy/.env.example");
   const sourceVersion = JSON.parse(await text("deno.json")).version as string;
-  const previousVersion = "0.3.2";
+  const previousVersion = "0.3.3";
   const previousPublicImage =
-    "ghcr.io/casys-ai/mcp-chrono@sha256:2e9b7d5b27e344499fe233ff4e0a1fcdbbe77c8f83bd78ee0cdbc26eb7a74557";
+    "ghcr.io/casys-ai/mcp-chrono@sha256:c362fe99f1fe0ef3dfcf29f63fe29ba610e0b980b04c4691802ddf303cc58395";
   const releaseImage = `ghcr.io/casys-ai/mcp-chrono:${sourceVersion}`;
   const jsrServer = `jsr:@casys/mcp-chrono@${sourceVersion}/server --stdio`;
   const composeFallbackImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
-  assertEquals(sourceVersion, "0.3.3");
+  assertEquals(sourceVersion, "0.3.4");
   assert(sourceVersion !== previousVersion);
   assert(release.includes("refs/tags/v"));
   assert(!release.includes(":latest"));

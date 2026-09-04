@@ -1,6 +1,6 @@
 {
   "name": "@casys/mcp-chrono",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "exports": {
     ".": "./mod.ts",
     "./server": "./server.ts",

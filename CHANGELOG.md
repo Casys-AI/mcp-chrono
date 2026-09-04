@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.3.4 — Unreleased
 
+- Source version moved to `0.3.4`, the next release line after the published `0.3.3`
+  identities recorded in `docs/release.md`. Receipts are version-attested: this source
+  reads only exact `0.3.4` recorded runs and fails closed on `0.3.3` records, as `0.3.3`
+  did on earlier ones. `SECURITY.md` names `0.3.3` as the current line and `0.3.2` as
+  the previous one.
 - The run-record viewer now boots through `startPreactSurfaceApp` from
   `@casys/mcp-view-components@0.6.0` instead of a hand-written App lifecycle. Tool
   results and `viewer.session.apply` sessions still go through the strict `model.ts` and
@@ -18,10 +23,11 @@
   start shows `Chrono viewer unavailable`. Loading states carry the shared `Loading`
   title and `info` tone, empty states the `Empty` title and error results the `Error`
   title.
-- Pins the split View checkout to the `mcp-server` revision that carries
-  `@casys/mcp-view-components@0.6.0`. That revision is not on the `mcp-server` default
-  branch yet and 0.6.0 is unpublished: do not tag a Chrono release until the pin moves
-  to a durable revision.
+- Pins the split View checkout to `mcp-server` commit
+  `676a2c7379c6be9fe69a6b06da244178088b5e5a`, which carries
+  `@casys/mcp-view-components@0.6.0`. That commit is reachable from the `mcp-server`
+  default branch (merged as `f475f63`) and 0.6.0 is published on JSR and npm, so the pin
+  is durable.
 
 ## 0.3.3 — 2026-08-31
 
