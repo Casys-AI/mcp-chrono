@@ -2,10 +2,19 @@
 
 ## Current release line
 
-Source version `0.3.4` is the next release line; the source version alone is not
-registry evidence, and no `0.3.4` artifact exists until its own tag workflow and
-fresh-consumption checks pass. The last verified published identities are those of
-`0.3.3`, published from tag `v0.3.3` and commit
+Version `0.3.4` was published from tag `v0.3.4` and commit
+`f40659ab8bdb29c7e474ee4bd43720cbe1a2f7d6`:
+
+- JSR: `jsr:@casys/mcp-chrono@0.3.4/server`
+- GHCR index:
+  `ghcr.io/casys-ai/mcp-chrono@sha256:3b6bff8661e7b985630c64b22f219f5bc4d5a21a0fcf3632b8c07a7ba5a5e2e3`
+
+The release workflow completed successfully. Post-publication inspection confirmed the
+JSR metadata at `0.3.4` and the Linux/amd64 OCI index above.
+
+## Previous release
+
+Version `0.3.3` was published from tag `v0.3.3` and commit
 `3776c95215e9ff2ee317576b46070e2fa7fb5aca`:
 
 - JSR: `jsr:@casys/mcp-chrono@0.3.3/server`
