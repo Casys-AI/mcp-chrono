@@ -21,7 +21,7 @@ body {
   white-space: normal;
 }
 
-.chrono-run-record-card .mcp-view-element-body {
+.chrono-run-record .mcp-view-element-body {
   display: grid;
   gap: 14px;
 }

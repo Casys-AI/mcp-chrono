@@ -12,6 +12,7 @@ import {
 } from "../../app-contract.ts";
 import { parseChronoViewerSession } from "../../../viewer-session.ts";
 import { CHRONO_COMPONENT_REGISTRY } from "./components.tsx";
+import { chronoMessages } from "./messages.ts";
 import {
   type ChronoRunView,
   chronoRunViewFromDurableRecord,
@@ -26,8 +27,6 @@ export const CHRONO_APP_INFO = {
 
 /** Class of every status the viewer renders, for its own styling hooks. */
 export const CHRONO_STATUS_CLASS = "chrono-viewer-state";
-/** `code` of the danger state shown when a recorded session fails the strict parser. */
-export const SESSION_REJECTED_CODE = "session-rejected";
 
 export type ChronoSurfaceState = SurfaceDisplayState<ChronoRunView>;
 export type ChronoSurfaceAppOptions = PreactSurfaceAppOptions<
@@ -55,12 +54,16 @@ export function chronoSurfaceAppOptions(
     strict: true,
     surfaceClassName: "chrono-component-surface",
     statusClassName: CHRONO_STATUS_CLASS,
-    loadingLabel: "Receiving a Chrono run record or readback…",
-    emptyLabel: "Chrono returned no supported run-record projection.",
+    documentLanguage: chronoMessages.locale,
+    // Token-following primitives; in-place keeps the native disclosure open state.
+    themeUpdates: "in-place",
+    loadingLabel: (locale) => chronoMessages(locale)("loadingMessage"),
+    emptyLabel: (locale) => chronoMessages(locale)("emptyMessage"),
     fromToolResult: (result) => toSurfaceState(displayStateFromToolResult(result)),
     viewerSession: {
       // Every `viewer.session.apply` payload addresses this whole-view App;
-      // the strict parser decides, and a rejection is shown, never dropped.
+      // the strict parser decides. Rejections keep their literal code and
+      // diagnostic, while the title follows the host locale.
       validate: (_value: unknown): _value is unknown => true,
       toState: async (value) => {
         try {
@@ -68,8 +71,8 @@ export function chronoSurfaceAppOptions(
         } catch (error) {
           return {
             kind: "error",
-            title: "Session rejected",
-            code: SESSION_REJECTED_CODE,
+            title: (locale) => chronoMessages(locale)("sessionRejectedTitle"),
+            code: "session-rejected",
             message: `Rejected ${CHRONO_VIEWER_SESSION_SCHEMA} session: ${
               errorMessage(error)
             }`,
@@ -99,7 +102,9 @@ export async function displayStateFromViewerSession(
  * unavailable recorded runs are notices, not errors: nothing failed, the
  * ledger simply holds no record to show. `code` carries the ledger status.
  */
-export function toSurfaceState(state: DisplayState): ChronoSurfaceState {
+export function toSurfaceState(
+  state: DisplayState,
+): ChronoSurfaceState {
   switch (state.kind) {
     case "loading":
     case "empty":
@@ -109,7 +114,7 @@ export function toSurfaceState(state: DisplayState): ChronoSurfaceState {
       return {
         kind: "notice",
         tone: "warning",
-        title: "Recorded Chrono run unresolved",
+        title: (locale) => chronoMessages(locale)("unresolvedTitle"),
         message: state.reason,
         code: state.kind,
       };
@@ -117,7 +122,7 @@ export function toSurfaceState(state: DisplayState): ChronoSurfaceState {
       return {
         kind: "notice",
         tone: "warning",
-        title: "Recorded Chrono run unavailable",
+        title: (locale) => chronoMessages(locale)("unavailableTitle"),
         message: state.reason,
         code: state.kind,
       };
@@ -129,12 +134,16 @@ export function toSurfaceState(state: DisplayState): ChronoSurfaceState {
 }
 
 /** The danger state shown when the App itself cannot start. */
-export function renderStartupFailure(error: unknown): HTMLElement {
+export function renderStartupFailure(
+  error: unknown,
+  locale?: string,
+): HTMLElement {
+  const t = chronoMessages(locale);
   return renderStatusMessage(
-    error instanceof Error ? error.message : "The viewer could not start.",
+    error instanceof Error ? error.message : t("startupFallback"),
     {
       className: CHRONO_STATUS_CLASS,
-      title: "Chrono viewer unavailable",
+      title: t("startupTitle"),
       tone: "danger",
     },
   );

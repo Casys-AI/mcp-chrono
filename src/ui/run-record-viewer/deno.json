@@ -18,6 +18,7 @@
   "imports": {
     "linkedom": "npm:linkedom@0.18.12",
     "preact": "npm:preact@10.29.7",
+    "preact/hooks": "npm:preact@10.29.7/hooks",
     "preact/jsx-runtime": "npm:preact@10.29.7/jsx-runtime",
     "@std/assert": "jsr:@std/assert@1.0.19",
     "@std/path": "jsr:@std/path@1.1.6"

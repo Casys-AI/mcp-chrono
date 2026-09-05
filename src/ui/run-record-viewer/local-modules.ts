@@ -78,6 +78,7 @@ export async function auditedViewerDenoConfig(): Promise<unknown> {
       "@std/path": "jsr:@std/path@1.1.6",
       "linkedom": "npm:linkedom@0.18.12",
       "preact": "npm:preact@10.29.7",
+      "preact/hooks": "npm:preact@10.29.7/hooks",
       "preact/jsx-runtime": "npm:preact@10.29.7/jsx-runtime",
     },
   };

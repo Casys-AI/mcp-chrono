@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.4 — Unreleased
+## 0.3.4 — 2026-09-05
 
 - Source version moved to `0.3.4`, the next release line after the published `0.3.3`
   identities recorded in `docs/release.md`. Receipts are version-attested: this source
@@ -8,7 +8,7 @@
   did on earlier ones. `SECURITY.md` names `0.3.3` as the current line and `0.3.2` as
   the previous one.
 - The run-record viewer now boots through `startPreactSurfaceApp` from
-  `@casys/mcp-view-components@0.7.0` instead of a hand-written App lifecycle. Tool
+  `@casys/mcp-view-components@0.9.0` instead of a hand-written App lifecycle. Tool
   results and `viewer.session.apply` sessions still go through the strict `model.ts` and
   `viewer-session.ts` parsers; the shared lifecycle owns view routing, host surface
   selection and the pre-connect session buffer.
@@ -18,17 +18,20 @@
 - Status states render through the shared `StateMessage` primitive with the
   `chrono-viewer-state` class. Unresolved and unavailable recorded runs are warning
   notices whose `code` carries the ledger status; a session the strict parser refuses is
-  a danger state titled `Session rejected` with code `session-rejected`; a tool result
-  the projection cannot read is the shared `Result rejected` state; a viewer that cannot
-  start shows `Chrono viewer unavailable`. Loading states carry the shared `Loading`
-  title and `info` tone, empty states the `Empty` title and error results the `Error`
-  title.
+  shown as a `Session rejected` danger state with its `session-rejected` code; a tool
+  result the projection cannot read is the shared `Result rejected` state; a viewer that
+  cannot start shows `Chrono viewer unavailable`. Loading states carry the shared
+  `Loading` title and `info` tone, empty states the `Empty` title and error results the
+  `Error` title.
 - Pins the split View checkout to `mcp-server` commit
-  `59eeb3750d2049b8141b09d3a6f29f66f9d3c657`, which carries `@casys/mcp-view@0.9.3` and
-  `@casys/mcp-view-components@0.7.0`. The pin is durable once Casys-AI/mcp-server#37 is
-  merged as a merge commit, which is also what publishes 0.9.3 and 0.7.0 on JSR and npm.
-  With 0.7.0 a complete `tool-input`, not only a partial one, returns the App to
-  `loading`.
+  `b08802df353bb25d25a1c8d64b22ea61b5287ae0`, which carries `@casys/mcp-view@0.9.3`,
+  contracts `0.1.0`, and `@casys/mcp-view-components@0.9.0`.
+- Source of the recorded-run viewer now consumes the view-components 0.9.0 presentation
+  API: `FocusedView` keeps the literal execution status and a readable title outside a
+  closed native disclosure, EN/FR interface labels go through `createTranslator` and the
+  host locale, and `themeUpdates: "in-place"` is set because the sheet follows CSS
+  tokens. Its document language names the selected dictionary; notice and rejection
+  labels retranslate after a host locale change while diagnostics stay exact.
 
 ## 0.3.3 — 2026-08-31
 

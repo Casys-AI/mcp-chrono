@@ -16,6 +16,7 @@ import {
   ElementProvenance,
   ElementReading,
   ElementSection,
+  FocusedView,
   InlineCode,
   KeyValueList,
   NoticeGroup,
@@ -23,6 +24,7 @@ import {
   StateMessage,
 } from "@casys/mcp-view-components/preact/components";
 import type { ComponentChild } from "preact";
+import { chronoMessages } from "./messages.ts";
 import {
   type ChronoRunRecordView,
   type ChronoRunView,
@@ -34,6 +36,7 @@ export const CHRONO_COMPONENT_KEYS = {
 } as const;
 
 type ChronoComponentProps = PreactSurfaceComponentProps<ChronoRunView>;
+type ChronoTranslator = ReturnType<typeof chronoMessages>;
 
 interface Fact {
   readonly id: string;
@@ -41,153 +44,177 @@ interface Fact {
   readonly value: ComponentChild;
 }
 
-const RecordedRun = ({ data }: ChronoComponentProps) => {
+const RecordedRun = ({ data, context }: ChronoComponentProps) => {
+  const hostContext = context.hostContext;
+  const t = chronoMessages(hostContext?.locale);
   if (data.kind === "absent") {
     return (
       <StateMessage title="absent" tone="neutral">
-        No recorded run exists for this request identity.
+        {t("absentDetail")}
       </StateMessage>
     );
   }
   if (data.kind === "uncertain") {
     return (
       <StateMessage title="uncertain" tone="warning">
-        Intent is persisted without a recorded observation and is never rerun
-        automatically. Request{" "}
+        {t("uncertainDetail")} {t("requestLabel")}{" "}
         <InlineCode>{data.intent.request.request_id}</InlineCode>.
       </StateMessage>
     );
   }
   const { record } = data;
   const { observation, receipt } = record;
+  const notConverged = observation.execution_state === "not_converged";
   return (
-    <SemanticElement
-      className="chrono-run-record-card"
-      reference={{
-        domain: "chrono",
-        kind: "recorded-run",
-        id: record.request.request_id,
-        basisFingerprint: receipt.receipt_sha256,
-      }}
-      density="card"
-      // The engine's own state is the only thing that colours the sheet.
-      tone={observation.execution_state === "not_converged" ? "warning" : undefined}
-      ident={
-        <ElementIdent
-          marker="Recorded"
-          label={<InlineCode>{record.request.request_id}</InlineCode>}
-          detail={data.replayed
-            ? "Prescribed kinematics run · replayed from the existing record"
-            : "Prescribed kinematics run"}
+    <FocusedView
+      className="chrono-run-record"
+      label={t("recordedRunLabel")}
+      hostContext={hostContext}
+      status={
+        <NoticeGroup
+          label={t("notEvaluated")}
+          tone="neutral"
+          items={[observation.not_evaluated.join(", ")]}
         />
       }
-      reading={[
-        <ElementReading
-          key="execution-state"
-          label="Execution state"
-          value={observation.execution_state}
-        />,
-        <ElementReading
-          key="samples"
-          label="Samples"
-          value={formatExactNumber(observation.sample_count)}
-        />,
-        <ElementReading
-          key="time-range"
-          label="Time range"
-          value={formatExactNumber(observation.sample_time_range_s.first) + " → " +
-            formatExactNumber(observation.sample_time_range_s.last)}
-          unit="s"
-        />,
-        <ElementReading
-          key="kinematics-exit"
-          label="Kinematics exit"
-          value={observation.kinematics_exit.raw_name}
-          detail={`raw code ${formatExactNumber(observation.kinematics_exit.raw_code)}`}
-        />,
-      ]}
-      body={
+      primary={
+        <SemanticElement
+          className="chrono-run-record-card"
+          reference={{
+            domain: "chrono",
+            kind: "recorded-run",
+            id: record.request.request_id,
+            basisFingerprint: receipt.receipt_sha256,
+          }}
+          density="card"
+          // The engine's own state is the only thing that colours the sheet.
+          tone={notConverged ? "warning" : undefined}
+          ident={
+            <ElementIdent
+              marker={t("recordedMarker")}
+              label={t("prescribedKinematics")}
+              detail={data.replayed ? t("prescribedKinematicsReplayed") : undefined}
+            />
+          }
+          reading={[
+            <ElementReading
+              key="execution-state"
+              label={t("executionState")}
+              value={observation.execution_state}
+            />,
+            <ElementReading
+              key="samples"
+              label={t("samples")}
+              value={formatExactNumber(observation.sample_count)}
+            />,
+            <ElementReading
+              key="time-range"
+              label={t("timeRange")}
+              value={formatExactNumber(observation.sample_time_range_s.first) +
+                " → " +
+                formatExactNumber(observation.sample_time_range_s.last)}
+              unit="s"
+            />,
+            <ElementReading
+              key="kinematics-exit"
+              label={t("kinematicsExit")}
+              value={observation.kinematics_exit.raw_name}
+              detail={t("rawCode", {
+                code: formatExactNumber(observation.kinematics_exit.raw_code),
+              })}
+            />,
+          ]}
+        />
+      }
+      detailsLabel={t("technicalDetails")}
+      details={
         <ElementBody>
-          <ElementSection title="Engine">
-            <Facts items={engineFacts(record)} />
-          </ElementSection>
-          <NoticeGroup
-            label="Not evaluated"
-            tone="neutral"
-            items={[observation.not_evaluated.join(", ")]}
+          <Facts
+            items={[{
+              id: "request",
+              label: t("requestLabel"),
+              value: <InlineCode>{record.request.request_id}</InlineCode>,
+            }]}
           />
-          <ElementSection title="Provenance">
+          <ElementSection title={t("engine")}>
+            <Facts items={engineFacts(record, t)} />
+          </ElementSection>
+          <ElementSection title={t("provenance")}>
             <ArtifactRow
-              label="Case"
+              label={t("caseLabel")}
               kind="input"
               uri={record.case_uri}
               fingerprint={{ algorithm: "sha256", digest: record.request.case_sha256 }}
             />
-            <Facts items={provenanceFacts(record)} />
+            <Facts items={provenanceFacts(record, t)} />
           </ElementSection>
-          <ElementSection title="Digests">
+          <ElementSection title={t("digests")}>
             <Facts
               items={[
                 {
                   id: "outcome",
-                  label: "Outcome",
+                  label: t("outcome"),
                   value: digest(receipt.outcome_sha256),
                 },
                 {
                   id: "worker-source",
-                  label: "Worker source",
+                  label: t("workerSource"),
                   value: digest(receipt.worker.source_sha256),
                 },
               ]}
             />
           </ElementSection>
+          <ElementProvenance
+            label={t("receipt")}
+            value={digest(receipt.receipt_sha256)}
+          />
         </ElementBody>
-      }
-      provenance={
-        <ElementProvenance
-          label="Receipt"
-          value={digest(receipt.receipt_sha256)}
-        />
       }
     />
   );
 };
 
-function engineFacts({ observation, receipt }: ChronoRunRecordView): Fact[] {
+function engineFacts(
+  { observation, receipt }: ChronoRunRecordView,
+  t: ChronoTranslator,
+): Fact[] {
   return [
     {
       id: "engine",
-      label: "Engine",
+      label: t("engine"),
       value: `${observation.engine.name} ${observation.engine.version}`,
     },
     {
       id: "binding",
-      label: "Binding",
+      label: t("binding"),
       value:
         `${observation.runtime.binding} · Python ${observation.runtime.python_version}`,
     },
     {
       id: "server",
-      label: "Server",
+      label: t("server"),
       value: `${receipt.package.name} ${receipt.package.version}`,
     },
     {
       id: "provider",
-      label: "Provider",
+      label: t("provider"),
       value: `${receipt.provider.name} ${receipt.provider.version}`,
     },
-    { id: "deno", label: "Deno", value: receipt.server_runtime.deno_version },
+    { id: "deno", label: t("deno"), value: receipt.server_runtime.deno_version },
   ];
 }
 
-function provenanceFacts(record: ChronoRunRecordView): Fact[] {
+function provenanceFacts(
+  record: ChronoRunRecordView,
+  t: ChronoTranslator,
+): Fact[] {
   const facts: Fact[] = [
-    { id: "recorded-at", label: "Recorded at", value: record.recorded_at },
+    { id: "recorded-at", label: t("recordedAt"), value: record.recorded_at },
   ];
   if (record.request.timeout_ms !== undefined) {
     facts.push({
       id: "timeout",
-      label: "Requested timeout",
+      label: t("requestedTimeout"),
       value: `${formatExactNumber(record.request.timeout_ms)} ms`,
     });
   }

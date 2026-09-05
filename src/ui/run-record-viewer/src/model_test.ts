@@ -29,7 +29,6 @@ import {
   chronoSurfaceAppOptions,
   displayStateFromViewerSession,
   renderStartupFailure,
-  SESSION_REJECTED_CODE,
   toSurfaceState,
 } from "./app.ts";
 import {
@@ -37,6 +36,7 @@ import {
   CHRONO_COMPONENT_REGISTRY,
   CHRONO_RUN_RECORD_SURFACE,
 } from "./components.tsx";
+import { chronoMessages } from "./messages.ts";
 import {
   type ChronoDurableRunRecord,
   type ChronoRunRecordView,
@@ -466,6 +466,19 @@ Deno.test("the App projects tool results and recorded sessions through the model
   assertEquals(options.strict, true);
   assertEquals(options.surfaceClassName, "chrono-component-surface");
   assertEquals(options.statusClassName, CHRONO_STATUS_CLASS);
+  assertEquals(options.themeUpdates, "in-place");
+  assertEquals(options.documentLanguage, chronoMessages.locale);
+  assertEquals(typeof options.loadingLabel, "function");
+  assertEquals(
+    typeof options.loadingLabel === "function" ? options.loadingLabel("fr") : undefined,
+    chronoMessages("fr")("loadingMessage"),
+  );
+  assertEquals(
+    typeof options.loadingLabel === "function"
+      ? options.loadingLabel("not a locale")
+      : undefined,
+    chronoMessages()("loadingMessage"),
+  );
   const host = {
     readServerResource: () => Promise.reject(new Error("must not read")),
   };
@@ -494,11 +507,18 @@ Deno.test("the App projects tool results and recorded sessions through the model
   const rejected = await session.toState({ schema: "nope" }, host);
   assertEquals(rejected.kind, "error");
   if (rejected.kind === "error") {
-    assertEquals(rejected.title, "Session rejected");
-    assertEquals(rejected.code, SESSION_REJECTED_CODE);
-    assertStringIncludes(
-      rejected.message,
-      `Rejected ${CHRONO_VIEWER_SESSION_SCHEMA} session:`,
+    assertEquals(rejected.code, "session-rejected");
+    assertEquals(typeof rejected.message, "string");
+    if (typeof rejected.message === "string") {
+      assertStringIncludes(
+        rejected.message,
+        `Rejected ${CHRONO_VIEWER_SESSION_SCHEMA} session:`,
+      );
+    }
+    assertEquals(typeof rejected.title, "function");
+    assertEquals(
+      typeof rejected.title === "function" ? rejected.title("fr") : undefined,
+      chronoMessages("fr")("sessionRejectedTitle"),
     );
   }
   const available = await session.toState(await viewerSessionFixture(), host);
@@ -518,13 +538,18 @@ Deno.test("the App projects tool results and recorded sessions through the model
     kind: "unresolved",
     reason: "TRACE GAP",
   });
-  assertEquals(await session.toState(unresolvedSession, host), {
-    kind: "notice",
-    tone: "warning",
-    title: "Recorded Chrono run unresolved",
-    message: "TRACE GAP",
-    code: "unresolved",
-  });
+  const unresolved = await session.toState(unresolvedSession, host);
+  assertEquals(unresolved.kind, "notice");
+  if (unresolved.kind === "notice") {
+    assertEquals(unresolved.tone, "warning");
+    assertEquals(unresolved.message, "TRACE GAP");
+    assertEquals(unresolved.code, "unresolved");
+    assertEquals(typeof unresolved.title, "function");
+    assertEquals(
+      typeof unresolved.title === "function" ? unresolved.title("fr") : undefined,
+      chronoMessages("fr")("unresolvedTitle"),
+    );
+  }
 });
 
 Deno.test("ledger states are warning notices carrying the status; every run state is a result", () => {
@@ -533,16 +558,21 @@ Deno.test("ledger states are warning notices carrying the status; every run stat
     toSurfaceState({ kind: "error", message: "boom" }),
     { kind: "error", message: "boom" },
   );
-  assertEquals(
-    toSurfaceState({ kind: "unavailable", reason: "receipt quarantined" }),
-    {
-      kind: "notice",
-      tone: "warning",
-      title: "Recorded Chrono run unavailable",
-      message: "receipt quarantined",
-      code: "unavailable",
-    },
-  );
+  const unavailable = toSurfaceState({
+    kind: "unavailable",
+    reason: "receipt quarantined",
+  });
+  assertEquals(unavailable.kind, "notice");
+  if (unavailable.kind === "notice") {
+    assertEquals(unavailable.tone, "warning");
+    assertEquals(unavailable.message, "receipt quarantined");
+    assertEquals(unavailable.code, "unavailable");
+    assertEquals(typeof unavailable.title, "function");
+    assertEquals(
+      typeof unavailable.title === "function" ? unavailable.title("fr") : undefined,
+      chronoMessages("fr")("unavailableTitle"),
+    );
+  }
   assertEquals(
     toSurfaceState({ kind: "absent" }),
     { kind: "result", result: { kind: "absent" } },
@@ -573,6 +603,15 @@ Deno.test("a viewer that cannot start renders the shared danger state", async ()
       renderStartupFailure("not an error").textContent ?? "",
       "The viewer could not start.",
     );
+    assertStringIncludes(
+      renderStartupFailure(new Error("transport refused"), "fr").textContent ??
+        "",
+      chronoMessages("fr")("startupTitle"),
+    );
+    assertStringIncludes(
+      renderStartupFailure("not an error", "not a locale").textContent ?? "",
+      "The viewer could not start.",
+    );
   } finally {
     Object.defineProperty(globalThis, "document", {
       configurable: true,
@@ -585,6 +624,8 @@ Deno.test("compact default source does not import invented verdict or bound widg
   const source = await Deno.readTextFile(
     new URL("./components.tsx", import.meta.url),
   );
+  assertEquals(source.includes("FocusedView"), true);
+  assertEquals(source.includes("createTranslator"), false);
   assertEquals(source.includes("LimitGauge"), false);
   assertEquals(source.includes("ElementVerdict"), false);
   assertEquals(source.includes('tone: "'), false);
@@ -606,6 +647,23 @@ Deno.test({
           ),
           CHRONO_COMPONENT_KEYS.recordedRun,
         );
+        const focused = root.querySelector(".mcp-view-focused-view");
+        assertEquals(focused?.getAttribute("role"), "group");
+        assertEquals(focused?.getAttribute("aria-label"), "Recorded Chrono run");
+        assertStringIncludes(
+          root.querySelector(".mcp-view-focused-status")?.textContent ?? "",
+          "Not evaluated",
+        );
+        assertEquals(
+          root.querySelector(".mcp-view-focused-status .mcp-view-state"),
+          null,
+        );
+        const details = root.querySelector("details");
+        assertEquals(details?.hasAttribute("open"), false);
+        assertEquals(
+          details?.querySelector("summary")?.textContent,
+          "Technical details",
+        );
         const card = root.querySelector(".mcp-view-semantic-element");
         assertEquals(card?.getAttribute("data-density"), "card");
         assertEquals(card?.getAttribute("data-semantic-domain"), "chrono");
@@ -615,6 +673,13 @@ Deno.test({
         assertEquals(card?.hasAttribute("data-tone"), false);
         assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
         assertEquals(root.querySelector(".mcp-view-limit-gauge"), null);
+        const primary = root.querySelector(".mcp-view-focused-primary");
+        assertEquals(primary?.contains(card), true);
+        assertEquals(primary?.querySelector("details"), null);
+        assertEquals(
+          card?.querySelector(".mcp-view-element-ident-label")?.textContent,
+          "Prescribed kinematics run",
+        );
         const text = root.textContent ?? "";
         assertStringIncludes(text, "wire-paged");
         assertStringIncludes(text, "Prescribed kinematics run");
@@ -634,17 +699,23 @@ Deno.test({
           ),
           ["Engine", "Provenance", "Digests"],
         );
-        assertStringIncludes(text, "Project Chrono 10.0.0");
+        assertStringIncludes(details?.textContent ?? "", "Project Chrono 10.0.0");
+        assertEquals(
+          (primary?.textContent ?? "").includes("Project Chrono 10.0.0"),
+          false,
+        );
         assertStringIncludes(text, "pychrono · Python 3.12.0");
         assertStringIncludes(text, "Not evaluated");
         assertStringIncludes(text, "collision, clearance, contact");
+        assertEquals(details?.textContent?.includes("Not evaluated"), false);
         assertStringIncludes(text, "2026-08-28T00:00:00.000Z");
         // The case row spells its digest as uri and as fingerprint; every other digest once.
         assertEquals(text.split(CASE_SHA).length - 1, 2);
         assertEquals(text.split(OUTCOME_SHA).length - 1, 1);
         assertEquals(text.split(WORKER_SHA).length - 1, 1);
         assertEquals(
-          root.querySelector(".mcp-view-element-provenance code")?.textContent,
+          details?.querySelector(".mcp-view-element-provenance code")
+            ?.textContent,
           RECEIPT_SHA,
         );
         assertEquals(text.includes("Bounded sample page"), false);
@@ -678,6 +749,10 @@ Deno.test({
       (root) => {
         const card = root.querySelector(".mcp-view-semantic-element");
         assertEquals(card?.getAttribute("data-tone"), "warning");
+        assertEquals(
+          root.querySelector(".mcp-view-focused-status .mcp-view-state"),
+          null,
+        );
         assertStringIncludes(root.textContent ?? "", "not_converged");
         assertStringIncludes(root.textContent ?? "", "NOT_CONVERGED");
         assertStringIncludes(
@@ -685,6 +760,7 @@ Deno.test({
           "replayed from the existing record",
         );
         assertEquals(root.querySelector("[data-element-slot=verdict]"), null);
+        assertEquals(root.querySelector("details")?.hasAttribute("open"), false);
       },
     );
   },
@@ -704,12 +780,98 @@ Deno.test({
         assertStringIncludes(root.textContent ?? "", "uncertain");
         assertStringIncludes(root.textContent ?? "", "open-intent");
         assertEquals(root.querySelector(".mcp-view-semantic-element"), null);
+        assertEquals(root.querySelector(".mcp-view-focused-view"), null);
       },
     );
     await withMountedSurface({ kind: "absent" }, {}, (root) => {
       assertStringIncludes(root.textContent ?? "", "absent");
+      assertStringIncludes(
+        root.textContent ?? "",
+        "No recorded run exists for this request identity.",
+      );
       assertEquals(root.querySelector(".mcp-view-table"), null);
     });
+  },
+});
+
+Deno.test({
+  name: "interface labels follow the host locale while recorded facts stay exact",
+  permissions: { read: true, env: true, run: true },
+  async fn() {
+    const hostContext = {
+      locale: "fr",
+      theme: "light",
+      undocumentedHostField: "keep-me",
+    };
+    await withMountedSurface(
+      { kind: "recorded", replayed: false, record: recorded },
+      hostContext,
+      (root) => {
+        const t = chronoMessages("fr");
+        assertEquals(
+          root.querySelector(".mcp-view-focused-view")?.getAttribute(
+            "aria-label",
+          ),
+          t("recordedRunLabel"),
+        );
+        assertEquals(
+          root.querySelector("details summary")?.textContent,
+          t("technicalDetails"),
+        );
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-reading-label"),
+            (label) => label.textContent,
+          ),
+          [
+            t("executionState"),
+            t("samples"),
+            t("timeRange"),
+            t("kinematicsExit"),
+          ],
+        );
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-reading-value"),
+            (value) => value.textContent,
+          ),
+          ["completed", "2", "0 → 0.9999999999999999", "SUCCESS"],
+        );
+        assertStringIncludes(root.textContent ?? "", "code brut 1");
+        assertStringIncludes(root.textContent ?? "", "Project Chrono 10.0.0");
+        assertStringIncludes(root.textContent ?? "", "pychrono · Python 3.12.0");
+        assertStringIncludes(root.textContent ?? "", "wire-paged");
+        assertStringIncludes(root.textContent ?? "", RECEIPT_SHA);
+        assertEquals(
+          Array.from(
+            root.querySelectorAll(".mcp-view-element-section-title"),
+            (title) => title.textContent,
+          ),
+          [t("engine"), t("provenance"), t("digests")],
+        );
+        assertEquals(root.textContent?.includes("Execution state"), false);
+        assertEquals(root.textContent?.includes("Technical details"), false);
+      },
+    );
+    await withMountedSurface({ kind: "absent" }, { locale: "fr" }, (root) => {
+      assertStringIncludes(root.textContent ?? "", "absent");
+      assertStringIncludes(
+        root.textContent ?? "",
+        chronoMessages("fr")("absentDetail"),
+      );
+    });
+    await withMountedSurface(
+      { kind: "recorded", record: recorded },
+      { locale: "not a locale" },
+      (root) => {
+        assertEquals(
+          root.querySelector("details summary")?.textContent,
+          "Technical details",
+        );
+        assertStringIncludes(root.textContent ?? "", "completed");
+        assertStringIncludes(root.textContent ?? "", "SUCCESS");
+      },
+    );
   },
 });
 
@@ -736,7 +898,10 @@ async function withMountedSurface(
       root,
       registry: CHRONO_COMPONENT_REGISTRY,
       data,
-      appContext: componentContext,
+      appContext: {
+        ...componentContext,
+        hostContext,
+      } as PreactSurfaceContext<ChronoRunView>,
       hostContext: hostContext as PreactSurfaceContext<
         ChronoRunView
       >["hostContext"],
