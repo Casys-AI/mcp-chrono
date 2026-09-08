@@ -19,8 +19,18 @@ Native exit data stays literal. `NOT_CONVERGED` becomes
 observations keep translation residuals in metres separate from quaternion-imaginary
 rotation residuals.
 
-The container smoke is the native qualification oracle. Unit tests with an injected
-runner prove provider orchestration and validation, not PyChrono execution.
+Declared-limit `below` / `within` / `above` is an observation of the reported motor
+angle against `limits_rad`. It is not a stop, contact, force, or `NOT_CONVERGED`. A
+supported 1.0 connected revolute tree is not a deterministic native `NOT_CONVERGED`
+fixture; the container smoke does not invent a mechanical cause. Literal `NOT_CONVERGED`
+is qualified from injected worker output over MCP HTTP/stdio and the request ledger, and
+is labelled non-native.
+
+The container smoke is the native qualification oracle. It exercises the one-joint pose,
+zero-angle assembly, a three-body revolute tree, rotated parent/child/joint frames, and
+a declared-limit crossing over authenticated HTTP and the image stdio executable, with
+exact case and receipt rereads. Unit tests with an injected runner prove provider
+orchestration and validation, not PyChrono execution.
 
 The image removes unused Chrono datasets and PyChrono demos after validating the pinned
 package metadata and required core symbols. Those removed assets and modules that need

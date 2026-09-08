@@ -83,6 +83,8 @@ docker run --rm --entrypoint python mcp-chrono:local \
   /app/scripts/verify_image_notices.py
 ```
 
-The smoke covers the authenticated HTTP/MCP path, exact request replay, conflict
-handling, observed pose semantics and bounded readback. It does not broaden the
-kinematics contract into contact, forces, dynamics or product proof.
+The smoke covers the authenticated HTTP/MCP path, the image `--stdio` executable, exact
+request replay, conflict handling, observed pose semantics, a three-body revolute tree,
+rotated parent/child frames, declared-limit crossing, and bounded readback. It does not
+broaden the kinematics contract into contact, forces, dynamics or product proof. Literal
+`NOT_CONVERGED` is not a deterministic native tree fixture.

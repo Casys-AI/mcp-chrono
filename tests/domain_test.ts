@@ -35,6 +35,103 @@ Deno.test("domain admits a ceil-overcount decimal schedule", () => {
   assertEquals(validated.step_s, 0.01);
   assertEquals(validated.sample_every_steps, 3);
 });
+Deno.test("domain admits bounded three-body, rotated-frame, and limit-crossing fixtures", () => {
+  const rx: [number, number, number, number] = [
+    Math.SQRT1_2,
+    Math.SQRT1_2,
+    0,
+    0,
+  ];
+  const ry: [number, number, number, number] = [
+    Math.SQRT1_2,
+    0,
+    Math.SQRT1_2,
+    0,
+  ];
+  const identity = {
+    position_m: [0, 0, 0] as const,
+    rotation_wxyz: [1, 0, 0, 0] as const,
+  };
+  const threeBody = validateCase({
+    ...caseData(),
+    bodies: [
+      { id: "root", fixed: true, absolute_com_pose: identity },
+      {
+        id: "upper",
+        fixed: false,
+        absolute_com_pose: { position_m: [1, 0, 0], rotation_wxyz: [1, 0, 0, 0] },
+      },
+      {
+        id: "forearm",
+        fixed: false,
+        absolute_com_pose: { position_m: [2, 0, 0], rotation_wxyz: [1, 0, 0, 0] },
+      },
+    ],
+    joints: [
+      {
+        id: "shoulder",
+        parent_body: "root",
+        child_body: "upper",
+        absolute_joint_frame: identity,
+        angle_ramp: { initial_angle_rad: 0, angular_speed_rad_s: Math.PI / 2 },
+        limits_rad: [-Math.PI, Math.PI],
+      },
+      {
+        id: "elbow",
+        parent_body: "upper",
+        child_body: "forearm",
+        absolute_joint_frame: { position_m: [1, 0, 0], rotation_wxyz: [1, 0, 0, 0] },
+        angle_ramp: { initial_angle_rad: 0, angular_speed_rad_s: Math.PI / 2 },
+        limits_rad: [-Math.PI, Math.PI],
+      },
+    ],
+  });
+  assertEquals(threeBody.bodies.map((body) => body.id), ["root", "upper", "forearm"]);
+  const rotated = validateCase({
+    ...caseData(),
+    bodies: [
+      {
+        id: "root",
+        fixed: true,
+        absolute_com_pose: { position_m: [0, 0, 0], rotation_wxyz: rx },
+      },
+      {
+        id: "arm",
+        fixed: false,
+        absolute_com_pose: { position_m: [1, 0, 0], rotation_wxyz: ry },
+      },
+    ],
+    joints: [{
+      id: "hinge",
+      parent_body: "root",
+      child_body: "arm",
+      absolute_joint_frame: { position_m: [0, 0, 0], rotation_wxyz: rx },
+      angle_ramp: { initial_angle_rad: 0, angular_speed_rad_s: Math.PI / 2 },
+      limits_rad: [-Math.PI, Math.PI],
+    }],
+  });
+  assertEquals(rotated.joints[0].absolute_joint_frame.rotation_wxyz, rx);
+  const crossing = validateCase({
+    ...caseData(),
+    bodies: [
+      { id: "root", fixed: true, absolute_com_pose: identity },
+      {
+        id: "arm",
+        fixed: false,
+        absolute_com_pose: { position_m: [1, 0, 0], rotation_wxyz: [1, 0, 0, 0] },
+      },
+    ],
+    joints: [{
+      id: "hinge",
+      parent_body: "root",
+      child_body: "arm",
+      absolute_joint_frame: identity,
+      angle_ramp: { initial_angle_rad: 0, angular_speed_rad_s: 0.5 },
+      limits_rad: [0.2, 0.4],
+    }],
+  });
+  assertEquals(crossing.joints[0].limits_rad, [0.2, 0.4]);
+});
 Deno.test("runtime template is a valid closed 1.0 case", () => {
   assertEquals(validateCase(CASE_TEMPLATE).joints[0].id, "hinge");
   assertEquals(CASE_JSON_SCHEMA.$id, "chrono-prescribed-kinematics-case/1.0");

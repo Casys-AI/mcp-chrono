@@ -152,6 +152,7 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const dockerignore = await text(".dockerignore");
   const gitignore = await text(".gitignore");
   const dockerSmoke = await text("scripts/docker-smoke.sh");
+  const chronoSmoke = await text("scripts/chrono_smoke.py");
   const manifest = await text("src/tools/register.ts");
   const readme = await text("README.md");
   const changelog = await text("CHANGELOG.md");
@@ -255,6 +256,7 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(!deno.includes("--allow-slow-types"));
   assert(deno.includes("container_entrypoint_test.py"));
   assert(deno.includes("chrono_worker_test.py"));
+  assert(deno.includes("chrono_smoke_test.py"));
   assert(deno.includes("verify_published_release.ts"));
   for (const pattern of [".env", ".env.*", "**/.env", "**/.env.*"]) {
     assert(dockerignore.includes(pattern), `missing Docker ignore ${pattern}`);
@@ -302,18 +304,31 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(!/\b\d+\s+tools?\b/i.test(readme));
   assert(compose.includes(composeFallbackImage));
   assert(envExample.includes(composeFallbackImage));
-  assert(dockerSmoke.includes("native-smoke-zero-angle-reference"));
-  assert(dockerSmoke.includes('"chrono_case_get"'));
-  assert(dockerSmoke.includes('"chrono_run_receipt_get"'));
-  assert(dockerSmoke.includes('["record"]["observation"]'));
-  assert(dockerSmoke.includes('["record"]["receipt"]'));
-  assert(dockerSmoke.includes('["record"]["sample_page"]'));
+  assert(dockerSmoke.includes("chrono_smoke.py"));
+  assert(dockerSmoke.includes("http --port"));
+  assert(dockerSmoke.includes("stdio --"));
+  assert(dockerSmoke.includes("/app/server.ts --stdio"));
+  assert(chronoSmoke.includes("native-smoke-zero-angle-reference"));
+  assert(chronoSmoke.includes("native-smoke-three-body-tree"));
+  assert(chronoSmoke.includes("native-smoke-rotated-parent-child-frames"));
+  assert(chronoSmoke.includes("native-smoke-declared-limit-crossing"));
+  assert(chronoSmoke.includes('"chrono_case_get"'));
+  assert(chronoSmoke.includes('"chrono_run_receipt_get"'));
+  assert(chronoSmoke.includes('record["observation"]'));
+  assert(chronoSmoke.includes('["record"]["receipt"]'));
+  assert(chronoSmoke.includes('["record"]["sample_page"]'));
+  assert(!chronoSmoke.includes('["record"]["output"]'));
   assert(!dockerSmoke.includes('["record"]["output"]'));
-  assert(dockerSmoke.includes('"initial_angle_rad": 0.5'));
-  assert(dockerSmoke.includes("[math.cos(0.5), math.sin(0.5), 0]"));
+  assert(chronoSmoke.includes("zero_angle_reference_case"));
+  assert(chronoSmoke.includes("(0.5, 0)"));
+  assert(chronoSmoke.includes("[math.cos(0.5), math.sin(0.5), 0]"));
   assert(
-    dockerSmoke.includes("[math.cos(0.25), 0, 0, math.sin(0.25)]"),
+    chronoSmoke.includes("[math.cos(0.25), 0, 0, math.sin(0.25)]"),
   );
+  assert(chronoSmoke.includes("NATIVE_NOT_CONVERGED_FIXTURE = None"));
+  assert(chronoSmoke.includes("three_body_tree_case"));
+  assert(chronoSmoke.includes("rotated_parent_child_frames_case"));
+  assert(chronoSmoke.includes("declared_limit_crossing_case"));
 });
 
 Deno.test("packaged release metadata stays temporally neutral and preserves historical evidence", async () => {
