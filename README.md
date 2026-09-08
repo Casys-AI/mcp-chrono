@@ -21,7 +21,7 @@ provenance.
 - stores cases and recorded runs under immutable SHA-256 identities;
 - preserves literal engine observations, including non-convergence;
 - exposes one compact MCP App component for an exact recorded run;
-- works over MCP stdio or authenticated HTTP in the published container.
+- works over MCP stdio or authenticated HTTP in the native container.
 
 The provider does **not** infer joints from CAD or SysML, execute caller-provided code,
 or evaluate contact, forces, dynamics, strength, safety or product fitness. A successful
@@ -29,14 +29,17 @@ native kinematics exit is not a product decision.
 
 ## Quick start
 
-For an MCP host using stdio:
+For an MCP host using stdio, run this package version:
 
 ```sh
 deno run -A jsr:@casys/mcp-chrono@0.3.4/server --stdio
 ```
 
 The native container includes the pinned Project Chrono runtime. Keep it on loopback,
-use a long random bearer token and preserve `/data`:
+use a long random bearer token and preserve `/data`. The GHCR version tag below is a
+convenience pointer. Production deployments pin the immutable digest recorded after
+publication in [the release documentation](docs/release.md); this README does not embed
+a digest as a pre-publication assertion.
 
 ```sh
 docker pull ghcr.io/casys-ai/mcp-chrono:0.3.4
@@ -51,8 +54,7 @@ docker run --rm \
 ```
 
 The endpoint is `http://127.0.0.1:3025/mcp` and requires
-`Authorization: Bearer <token>`. Production deployments should pin the immutable digest
-recorded in [the release documentation](docs/release.md).
+`Authorization: Bearer <token>`.
 
 ## Documentation
 
