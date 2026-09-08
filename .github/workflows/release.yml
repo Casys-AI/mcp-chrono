@@ -167,3 +167,40 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           provenance: mode=max
           sbom: true
+  verify-published:
+    needs: [verify, publish-jsr, publish-ghcr]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
+        with: { deno-version: v2.9.6 }
+      - name: Verify published JSR version and GHCR tags
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          deno run --allow-net --allow-read="$GITHUB_WORKSPACE" --allow-write=. \
+            scripts/verify_published_release.ts \
+            --package @casys/mcp-chrono \
+            --version "$VERSION" \
+            --image "$REGISTRY_IMAGE" \
+            --commit "$GITHUB_SHA" \
+            --source-root "$GITHUB_WORKSPACE" \
+            --evidence-file published-release.json \
+            --notes-file published-release-notes.md
+          cat published-release.json
+          cat published-release-notes.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Record registry-fetched digest on the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "v$VERSION" published-release.json \
+            --title "mcp-chrono $VERSION" \
+            --notes-file published-release-notes.md \
+            --verify-tag
