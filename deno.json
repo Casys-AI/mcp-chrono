@@ -24,7 +24,7 @@
     "check:ui:bundle": "deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/check-bundle.ts",
     "docs:viewer-fixture": "deno run --allow-read --allow-write=docs/fixtures scripts/generate-viewer-doc-fixture.ts",
     "docs:viewer-screenshot": "deno run --allow-read --allow-write=docs/assets --allow-net=127.0.0.1 --allow-env=CHROME_BIN,FFMPEG_BIN --allow-run scripts/capture-viewer-doc.ts",
-    "test": "deno test -A tests/ && python3 -B -m unittest tests/container_entrypoint_test.py tests/chrono_worker_test.py && deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/test.ts",
+    "test": "deno test -A tests/ && python3 -B -m unittest tests/container_entrypoint_test.py tests/chrono_worker_test.py tests/chrono_smoke_test.py && deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/test.ts",
     "smoke": "deno run -A scripts/smoke.ts",
     "release:check": "deno fmt --check && deno task check && deno task lint && deno task test && deno task check:ui:bundle && deno publish --dry-run"
   },
