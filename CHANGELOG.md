@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.5 — Unreleased
+
+- Adds post-publication verification that reads the exact JSR package files and
+  anonymous GHCR version and commit tags, validates their shared Linux/amd64 index and
+  OCI labels, then records the registry-fetched digest on the GitHub Release.
+- Expands native smoke fixtures to cover the explicit three-body tree, rotated
+  parent/child frames and declared-limit crossing. `NOT_CONVERGED` remains injected-only
+  coverage; it is not asserted as deterministic native nonconvergence.
+- Source version moved to `0.3.5`. Receipts are version-attested: this source reads only
+  exact `0.3.5` recorded runs and fails closed on `0.3.4` records.
+
 ## 0.3.4 — 2026-09-05
 
 - Source version moved to `0.3.4`, the next release line after the published `0.3.3`

@@ -2,19 +2,19 @@
   "schemaVersion": "io.casys.mcp-chrono.recorded-run-session/1.0",
   "kind": "chrono.recorded-run",
   "basis": {
-    "sessionFingerprint": "sha256:143ca0310ff9d20a4db23f6b84c996c1db3618e28185473118fc1540462189de"
+    "sessionFingerprint": "sha256:2f50cadde9e2d1f68677b83c3dc739d20f264bc58aa1bf3f10e76bbe115aecb6"
   },
   "anchor": {
     "kind": "chrono-recorded-run",
     "id": "documentation-fixture-not-evidence",
-    "uri": "chrono-receipt:sha256:3c75ab518221ebe0d7065f4b4339a9ed1324a971e8fa5702b8a1522e2a70d307",
-    "fingerprint": "sha256:3c75ab518221ebe0d7065f4b4339a9ed1324a971e8fa5702b8a1522e2a70d307"
+    "uri": "chrono-receipt:sha256:f80f847c5a7fc7e430c7e0d15e49a538c2ec63f6f11a1fff28ea77796f67e21f",
+    "fingerprint": "sha256:f80f847c5a7fc7e430c7e0d15e49a538c2ec63f6f11a1fff28ea77796f67e21f"
   },
   "provenance": {
     "kind": "mcp-chrono-recorded-run",
     "server": {
       "package": "@casys/mcp-chrono",
-      "version": "0.3.4"
+      "version": "0.3.5"
     },
     "requestId": "documentation-fixture-not-evidence",
     "caseArtifact": {
@@ -23,8 +23,8 @@
     },
     "outcomeFingerprint": "sha256:b23c778e79173c3deb4afa864a5bdd4e398b7bd3f49c5a6502be2d6f763a51c7",
     "receiptArtifact": {
-      "uri": "chrono-receipt:sha256:3c75ab518221ebe0d7065f4b4339a9ed1324a971e8fa5702b8a1522e2a70d307",
-      "fingerprint": "sha256:3c75ab518221ebe0d7065f4b4339a9ed1324a971e8fa5702b8a1522e2a70d307"
+      "uri": "chrono-receipt:sha256:f80f847c5a7fc7e430c7e0d15e49a538c2ec63f6f11a1fff28ea77796f67e21f",
+      "fingerprint": "sha256:f80f847c5a7fc7e430c7e0d15e49a538c2ec63f6f11a1fff28ea77796f67e21f"
     }
   },
   "projection": {
@@ -106,18 +106,18 @@
       },
       "receipt": {
         "schema_id": "chrono-prescribed-kinematics-receipt/1.0",
-        "receipt_sha256": "3c75ab518221ebe0d7065f4b4339a9ed1324a971e8fa5702b8a1522e2a70d307",
+        "receipt_sha256": "f80f847c5a7fc7e430c7e0d15e49a538c2ec63f6f11a1fff28ea77796f67e21f",
         "case_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "outcome_sha256": "b23c778e79173c3deb4afa864a5bdd4e398b7bd3f49c5a6502be2d6f763a51c7",
         "request_id": "documentation-fixture-not-evidence",
         "recorded_at": "2026-08-31T00:00:00.000Z",
         "package": {
           "name": "@casys/mcp-chrono",
-          "version": "0.3.4"
+          "version": "0.3.5"
         },
         "provider": {
           "name": "casys-chrono",
-          "version": "0.3.4"
+          "version": "0.3.5"
         },
         "worker": {
           "source_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
