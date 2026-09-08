@@ -132,7 +132,7 @@ Deno.test("release pins and package version stay explicit", async () => {
       `CPU-only lock includes ${forbiddenPackagePrefix}`,
     );
   }
-  assertEquals(deno.version, "0.3.4");
+  assertEquals(deno.version, "0.3.5");
   assertEquals(deno.exports, {
     ".": "./mod.ts",
     "./server": "./server.ts",
@@ -164,14 +164,14 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   const compose = await text("deploy/compose.yaml");
   const envExample = await text("deploy/.env.example");
   const sourceVersion = JSON.parse(await text("deno.json")).version as string;
-  const previousVersion = "0.3.3";
+  const previousVersion = "0.3.4";
   const previousPublicImage =
-    "ghcr.io/casys-ai/mcp-chrono@sha256:c362fe99f1fe0ef3dfcf29f63fe29ba610e0b980b04c4691802ddf303cc58395";
+    "ghcr.io/casys-ai/mcp-chrono@sha256:3b6bff8661e7b985630c64b22f219f5bc4d5a21a0fcf3632b8c07a7ba5a5e2e3";
   const releaseImage = `ghcr.io/casys-ai/mcp-chrono:${sourceVersion}`;
   const jsrServer = `jsr:@casys/mcp-chrono@${sourceVersion}/server --stdio`;
   const composeFallbackImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
-  assertEquals(sourceVersion, "0.3.4");
+  assertEquals(sourceVersion, "0.3.5");
   assert(sourceVersion !== previousVersion);
   assert(release.includes("refs/tags/v"));
   assert(!release.includes(":latest"));
@@ -340,14 +340,14 @@ Deno.test("packaged release metadata stays temporally neutral and preserves hist
   const sourceVersion = JSON.parse(await text("deno.json")).version as string;
   const composeFallbackImage =
     "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
-  assertEquals(sourceVersion, "0.3.4");
+  assertEquals(sourceVersion, "0.3.5");
   assert(readme.includes(`jsr:@casys/mcp-chrono@${sourceVersion}/server`));
   assert(readme.includes(`ghcr.io/casys-ai/mcp-chrono:${sourceVersion}`));
   assert(readme.includes("convenience pointer"));
   assert(readme.includes("does not embed a digest as a pre-publication assertion"));
   assert(!readme.includes("sha256:"));
   assert(security.includes(sourceVersion));
-  assert(security.includes("0.3.3"));
+  assert(security.includes("0.3.4"));
   assert(security.includes("GitHub private vulnerability reporting"));
   assert(security.includes("does not assert that a JSR version"));
   assert(!security.includes("sha256:"));

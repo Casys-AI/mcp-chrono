@@ -16,7 +16,7 @@ steps. Do not attach real bearer tokens, persisted `/data` records, or customer 
 
 ## Supported releases
 
-Security fixes target the `0.3.4` release line packaged with this source and the
-previous qualified `0.3.3` artifact. Older image digests receive no separate support
+Security fixes target the `0.3.5` release line packaged with this source and the
+previous qualified `0.3.4` artifact. Older image digests receive no separate support
 commitment. Follow repository releases for replacements. Published registry identities
 are recorded after publication; they are not asserted by this file.

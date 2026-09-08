@@ -1,5 +1,12 @@
 # Release and registry evidence
 
+## Current source line
+
+Source version `0.3.5` is the next release line. The source version alone is not
+registry evidence; no `0.3.5` artifact exists until its own tag workflow and fresh
+consumption checks pass. The last verified published identities are `0.3.4`, recorded
+below.
+
 ## Recorded 0.3.4 publication
 
 Version `0.3.4` was published from tag `v0.3.4` and commit
