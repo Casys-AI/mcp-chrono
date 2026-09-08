@@ -18,7 +18,7 @@
   },
   "exclude": [".deps"],
   "tasks": {
-    "check": "deno check mod.ts server.ts scripts/generate-viewer-doc-fixture.ts scripts/capture-viewer-doc.ts src/adapters/**/*.ts src/application/**/*.ts src/cli.ts src/client.ts src/server.ts src/domain/**/*.ts src/tools/**/*.ts src/ui/register.ts src/ui/run-record-viewer/build.ts src/ui/run-record-viewer/check-bundle.ts src/ui/run-record-viewer/local-modules.ts src/ui/run-record-viewer/test.ts",
+    "check": "deno check mod.ts server.ts scripts/generate-viewer-doc-fixture.ts scripts/capture-viewer-doc.ts scripts/verify_published_release.ts src/adapters/**/*.ts src/application/**/*.ts src/cli.ts src/client.ts src/server.ts src/domain/**/*.ts src/tools/**/*.ts src/ui/register.ts src/ui/run-record-viewer/build.ts src/ui/run-record-viewer/check-bundle.ts src/ui/run-record-viewer/local-modules.ts src/ui/run-record-viewer/test.ts",
     "lint": "deno lint",
     "build:ui": "deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/build.ts",
     "check:ui:bundle": "deno run --config deno.json --lock=deno.lock --frozen -A src/ui/run-record-viewer/check-bundle.ts",

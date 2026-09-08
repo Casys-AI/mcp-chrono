@@ -202,10 +202,13 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(release.includes("image: mcp-chrono:release-verify"));
   const jsrStart = release.indexOf("  publish-jsr:");
   const ghcrStart = release.indexOf("  publish-ghcr:");
+  const publishedStart = release.indexOf("  verify-published:");
   assert(jsrStart > 0);
   assert(ghcrStart > jsrStart);
+  assert(publishedStart > ghcrStart);
   const jsrJob = release.slice(jsrStart, ghcrStart);
-  const ghcrJob = release.slice(ghcrStart);
+  const ghcrJob = release.slice(ghcrStart, publishedStart);
+  const publishedJob = release.slice(publishedStart);
   assert(
     jsrJob.includes("if: vars.CHRONO_JSR_RELEASE_ENABLED == 'true'"),
   );
@@ -228,12 +231,33 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   );
   assert(!ghcrJob.includes("ghcr.io/${{ github.repository }}"));
   assert(ghcrJob.includes("Refuse to overwrite immutable GHCR tags"));
+  assert(publishedJob.includes("needs: [verify, publish-jsr, publish-ghcr]"));
+  assert(publishedJob.includes("scripts/verify_published_release.ts"));
+  assert(publishedJob.includes('--commit "$GITHUB_SHA"'));
+  assert(publishedJob.includes('--source-root "$GITHUB_WORKSPACE"'));
+  assert(publishedJob.includes('--allow-read="$GITHUB_WORKSPACE"'));
+  assert(publishedJob.includes("published-release.json"));
+  assert(publishedJob.includes('gh release create "v$VERSION"'));
+  assert(publishedJob.includes('gh release create "v$VERSION" published-release.json'));
+  assert(publishedJob.includes("--notes-file published-release-notes.md"));
+  const verifyStep = publishedJob.slice(
+    publishedJob.indexOf("Verify published JSR version and GHCR tags"),
+    publishedJob.indexOf("Record registry-fetched digest"),
+  );
+  assert(!verifyStep.includes("GITHUB_TOKEN"));
+  assert(!verifyStep.includes("GHCR_TOKEN"));
+  assert(!verifyStep.includes("--allow-env"));
+  assert(!publishedJob.includes("packages: read"));
+  assert(!publishedJob.includes("deno publish"));
+  assert(!publishedJob.includes("docker/login-action"));
+  assert(!publishedJob.includes(":latest"));
   assert(!release.includes("CHRONO_RELEASE_ENABLED"));
   assert(!release.includes("--allow-slow-types"));
   assert(!deno.includes("--allow-slow-types"));
   assert(deno.includes("container_entrypoint_test.py"));
   assert(deno.includes("chrono_worker_test.py"));
   assert(deno.includes("chrono_smoke_test.py"));
+  assert(deno.includes("verify_published_release.ts"));
   for (const pattern of [".env", ".env.*", "**/.env", "**/.env.*"]) {
     assert(dockerignore.includes(pattern), `missing Docker ignore ${pattern}`);
   }
@@ -305,6 +329,39 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(chronoSmoke.includes("three_body_tree_case"));
   assert(chronoSmoke.includes("rotated_parent_child_frames_case"));
   assert(chronoSmoke.includes("declared_limit_crossing_case"));
+});
+
+ Deno.test("packaged release metadata stays temporally neutral and preserves historical evidence", async () => {
+  const readme = (await text("README.md")).replaceAll(/\s+/g, " ");
+  const security = (await text("SECURITY.md")).replaceAll(/\s+/g, " ");
+  const releaseDocs = (await text("docs/release.md")).replaceAll(/\s+/g, " ");
+  const compose = await text("deploy/compose.yaml");
+  const envExample = await text("deploy/.env.example");
+  const sourceVersion = JSON.parse(await text("deno.json")).version as string;
+  const composeFallbackImage =
+    "ghcr.io/casys-ai/mcp-chrono@sha256:b9332fdf44634a565596d5cee6e64c9735b35d22299fab806631eaf86aa479a6";
+  assertEquals(sourceVersion, "0.3.4");
+  assert(readme.includes(`jsr:@casys/mcp-chrono@${sourceVersion}/server`));
+  assert(readme.includes(`ghcr.io/casys-ai/mcp-chrono:${sourceVersion}`));
+  assert(readme.includes("convenience pointer"));
+  assert(readme.includes("does not embed a digest as a pre-publication assertion"));
+  assert(!readme.includes("sha256:"));
+  assert(security.includes(sourceVersion));
+  assert(security.includes("0.3.3"));
+  assert(security.includes("GitHub private vulnerability reporting"));
+  assert(security.includes("does not assert that a JSR version"));
+  assert(!security.includes("sha256:"));
+  assert(!security.includes("no published version"));
+  assert(!security.includes(`current \`${sourceVersion}\``));
+  assert(releaseDocs.includes("is not repaired"));
+  assert(releaseDocs.includes("including `0.3.1`"));
+  assert(releaseDocs.includes("qualified `0.2.0` digest fallback"));
+  assert(releaseDocs.includes("registry-fetched digest"));
+  assert(releaseDocs.includes("tagged checkout"));
+  assert(releaseDocs.includes("anonymous registry token exchange"));
+  assert(releaseDocs.includes("does not create historical GitHub Releases"));
+  assert(compose.includes(composeFallbackImage));
+  assert(envExample.includes(composeFallbackImage));
 });
 
 Deno.test("container proxy keeps its bearer boundary and bounded child fallback", async () => {
