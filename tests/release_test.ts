@@ -331,7 +331,7 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
   assert(chronoSmoke.includes("declared_limit_crossing_case"));
 });
 
- Deno.test("packaged release metadata stays temporally neutral and preserves historical evidence", async () => {
+Deno.test("packaged release metadata stays temporally neutral and preserves historical evidence", async () => {
   const readme = (await text("README.md")).replaceAll(/\s+/g, " ");
   const security = (await text("SECURITY.md")).replaceAll(/\s+/g, " ");
   const releaseDocs = (await text("docs/release.md")).replaceAll(/\s+/g, " ");
