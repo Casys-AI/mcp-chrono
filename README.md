@@ -1,7 +1,7 @@
 # Casys MCP Chrono
 
 [![JSR](https://jsr.io/badges/@casys/mcp-chrono)](https://jsr.io/@casys/mcp-chrono)
-[![CI](https://github.com/Casys-AI/mcp-chrono/actions/workflows/ci.yml/badge.svg)](https://github.com/Casys-AI/mcp-chrono/actions/workflows/ci.yml)
+[![CI](https://github.com/superWorldSavior/mcp-chrono/actions/workflows/ci.yml/badge.svg)](https://github.com/superWorldSavior/mcp-chrono/actions/workflows/ci.yml)
 
 A focused MCP provider for explicit prescribed rigid-body kinematics with
 [Project Chrono](https://projectchrono.org/). It records the exact case bytes, runs a
