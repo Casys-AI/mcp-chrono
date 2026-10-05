@@ -111,30 +111,59 @@ jobs:
       - name: Refuse to overwrite immutable GHCR tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: ${{ github.repository_owner }}
-          PACKAGE_NAME: ${{ github.event.repository.name }}
           VERSION: ${{ needs.verify.outputs.version }}
           SHA_TAG: sha-${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
+          image_path="${REGISTRY_IMAGE#ghcr.io/}"
+          OWNER="${image_path%%/*}"
+          PACKAGE_NAME="${image_path#*/}"
+          if [[ "$REGISTRY_IMAGE" != ghcr.io/* ]] ||
+             [[ "$image_path" == "$PACKAGE_NAME" ]] ||
+             ! [[ "$OWNER" =~ ^[a-z0-9][a-z0-9-]*$ ]] ||
+             ! [[ "$PACKAGE_NAME" =~ ^[a-z0-9][a-z0-9._-]*$ ]]; then
+            echo "Expected an untagged GHCR image with one namespace and package: $REGISTRY_IMAGE" >&2
+            exit 1
+          fi
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
-          api_url="https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100"
-          page=1
-          while :; do
+          get_api() {
             response_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
               --header "Accept: application/vnd.github+json" \
               --header "Authorization: Bearer $GITHUB_TOKEN" \
               --header "X-GitHub-Api-Version: 2022-11-28" \
-              "$api_url&page=$page")"
+              --connect-timeout 10 --max-time 30 \
+              "https://api.github.com$1")" || {
+              echo "Could not reach the GHCR package API." >&2
+              exit 1
+            }
+          }
+          get_api "/users/$OWNER"
+          if [ "$response_status" != 200 ]; then
+            echo "Could not establish the GHCR namespace account type (HTTP $response_status)." >&2
+            exit 1
+          fi
+          account_type="$(jq -er --arg owner "$OWNER" '
+            select((.login | ascii_downcase) == $owner) |
+            .type | select(. == "User" or . == "Organization")
+          ' "$response_file")" || {
+            echo "The GHCR namespace account response is invalid." >&2
+            exit 1
+          }
+          case "$account_type" in
+            Organization) owner_route=orgs ;;
+            User) owner_route=users ;;
+          esac
+          api_url="/$owner_route/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100"
+          page=1
+          while :; do
+            get_api "$api_url&page=$page"
             case "$response_status" in
               404)
-                if [ "$page" -eq 1 ]; then
-                  # The package does not exist yet, so both tags are available.
-                  exit 0
-                fi
-                echo "GHCR package disappeared while checking immutable tags." >&2
+                # A missing package and missing access can both appear as 404.
+                # A new package needs a separate, explicitly qualified bootstrap.
+                echo "GHCR package existence or access is unknown (HTTP 404); refusing to publish." >&2
                 exit 1
                 ;;
               200)
@@ -144,6 +173,15 @@ jobs:
                 exit 1
                 ;;
             esac
+            if ! jq -e '
+              type == "array" and all(.[];
+                (.metadata.container.tags | type) == "array" and
+                all(.metadata.container.tags[]; type == "string")
+              )
+            ' "$response_file" >/dev/null; then
+              echo "The GHCR package versions response is invalid." >&2
+              exit 1
+            fi
             if jq -e --arg version "$VERSION" --arg sha_tag "$SHA_TAG" '
               any(.[]; (.metadata.container.tags // []) | index($version) or index($sha_tag))
             ' "$response_file" >/dev/null; then
