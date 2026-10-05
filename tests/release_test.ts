@@ -225,7 +225,7 @@ Deno.test("release workflow requires explicit artifact clearance and does not pu
     ),
   );
   assert(ghcrJob.includes("push: true"));
-  assert(release.includes("REGISTRY_IMAGE: ghcr.io/casys-ai/mcp-chrono"));
+  assert(release.includes("REGISTRY_IMAGE: ghcr.io/superworldsavior/mcp-chrono"));
   assert(
     ghcrJob.includes("${{ env.REGISTRY_IMAGE }}:${{ needs.verify.outputs.version }}"),
   );

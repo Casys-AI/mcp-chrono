@@ -5,7 +5,7 @@ FROM --platform=linux/amd64 mambaorg/micromamba@sha256:2681c45bf145f9b292fc26120
 
 LABEL org.opencontainers.image.title="Casys MCP Chrono" \
       org.opencontainers.image.description="Authenticated Project Chrono prescribed-kinematics MCP provider" \
-      org.opencontainers.image.source="https://github.com/Casys-AI/mcp-chrono" \
+      org.opencontainers.image.source="https://github.com/superWorldSavior/mcp-chrono" \
       org.opencontainers.image.licenses="NOASSERTION" \
       org.opencontainers.image.vendor="Casys"
 

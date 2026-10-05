@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 env:
-  REGISTRY_IMAGE: ghcr.io/casys-ai/mcp-chrono
+  REGISTRY_IMAGE: ghcr.io/superworldsavior/mcp-chrono
 jobs:
   verify:
     if: startsWith(github.ref, 'refs/tags/v')
